@@ -37,7 +37,8 @@ case class WaitingPlayer(position: (Int, Int)) extends PlayerStatus
 case object RunningPlayer extends PlayerStatus
 
 
-//#logger-actor
+//#arbitrator-actor
+
 class Arbitrator(loggerActor: ActorRef) extends Actor with ActorLogging {
 
   import Arbitrator._
@@ -106,4 +107,4 @@ class Arbitrator(loggerActor: ActorRef) extends Actor with ActorLogging {
   }
 }
 
-//#logger-actor
+//#arbitrator-actor
