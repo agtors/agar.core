@@ -61,7 +61,7 @@ class Arbitrator(loggerActor: ActorRef) extends Actor with ActorLogging {
           n -> (p, RunningPlayer)
       }
 
-      val d = duration.FiniteDuration(1000, TimeUnit.SECONDS)
+      val d = duration.FiniteDuration(5, TimeUnit.SECONDS)
       val cancellable = context.system.scheduler.scheduleOnce(d, self, TimeoutTurn)
 
       context.become(runGameTurn(newPlayers, cancellable))
