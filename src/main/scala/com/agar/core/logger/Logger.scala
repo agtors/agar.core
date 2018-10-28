@@ -1,6 +1,7 @@
-package com.agar.core
+package com.agar.core.logger
 
 import akka.actor.{Actor, ActorLogging, Props}
+import com.agar.core.arbritrator.Arbitrator
 
 //#logger-companion
 
