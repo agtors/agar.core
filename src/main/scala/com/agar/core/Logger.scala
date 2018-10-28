@@ -8,7 +8,6 @@ object Logger {
 
   def props: Props = Props[Arbitrator]
 
-  //#printer-messages
   final case class Movement(number: Int, position: (Int, Int))
 
 }
