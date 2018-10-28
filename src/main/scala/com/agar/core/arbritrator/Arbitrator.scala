@@ -38,6 +38,8 @@ class Arbitrator(loggerActor: ActorRef) extends Actor with ActorLogging {
 
   type Universe = Map[Int, (ActorRef, PlayerStatus)]
 
+  // Initial behavior
+
   def receive: PartialFunction[Any, Unit] = {
     case Start(numbers) =>
       val players = (0 to numbers)
@@ -52,8 +54,11 @@ class Arbitrator(loggerActor: ActorRef) extends Actor with ActorLogging {
       self ! NewTurn
   }
 
-  def startGameTurn(players: Universe): PartialFunction[Any, Unit] = {
+  //
+  // Start turn behavior
+  //
 
+  def startGameTurn(players: Universe): PartialFunction[Any, Unit] = {
     case NewTurn =>
       val newPlayers = players.map {
         case (n, (p, _)) =>
@@ -71,6 +76,10 @@ class Arbitrator(loggerActor: ActorRef) extends Actor with ActorLogging {
       self ! NewTurn
   }
 
+  //
+  // Ongoing turn behavior
+  //
+
   def runGameTurn(players: Universe, cancellable: Cancellable): PartialFunction[Any, Unit] = {
     case Played(number, position) =>
       val newPlayers = players.get(number).map {
@@ -82,28 +91,32 @@ class Arbitrator(loggerActor: ActorRef) extends Actor with ActorLogging {
         players + _
       }
 
-      if (turnIfFinished(newPlayers)) {
+      if (runningPlayers(newPlayers).isEmpty) {
         cancellable.cancel()
         context.become(startGameTurn(newPlayers))
         self ! SolveTurn
       }
 
     case TimeoutTurn =>
-      val newPlayers = players.map {
-        case (n, (p, RunningPlayer)) =>
-          // kill this actor
-          p ! PoisonPill
-          n -> (p, RunningPlayer)
-        case (n, (p, s)) =>
-          n -> (p, s)
-      }.filter(_._2._2 != RunningPlayer)
+      runningPlayers(players).foreach { case (n, (p, _)) =>
+        // kill this actor
+        p ! PoisonPill
+      }
 
-      context.become(startGameTurn(newPlayers))
+      context.become(startGameTurn(waitingPlayers(players)))
       self ! SolveTurn
   }
 
-  private def turnIfFinished(players: Universe): Boolean = !players.exists {
-    _._2._2 == RunningPlayer
+  //
+  // Private behaviors
+  //
+
+  private def runningPlayers(players: Universe): Map[Int, (ActorRef, PlayerStatus)] = players.filter {
+    case (_, (_,s)) => s == RunningPlayer
+  }
+
+  private def waitingPlayers(players: Universe): Map[Int, (ActorRef, PlayerStatus)] = players.filter {
+    case (_, (_,s)) => s != RunningPlayer
   }
 
   private def freshPlayer(n: Int): ActorRef = {

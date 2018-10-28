@@ -31,7 +31,7 @@ class PlayerSpec(_system: ActorSystem)
       //#specification-example
       val testProbe = TestProbe()
       val player = system.actorOf(Player.props(0, testProbe.ref))
-      player ! Init(0,0)
+      player ! Init(0, 0)
       player ! Move
       testProbe.expectMsg(500 millis, Movement(0, (1, 1)))
     }
