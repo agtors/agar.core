@@ -1,19 +1,18 @@
 package com.agar.core.arbritrator
 
-import java.util.concurrent.TimeUnit
-
 import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, PoisonPill, Props}
+import com.agar.core.context.AgarContext
 import com.agar.core.player.Player
 import com.agar.core.player.Player.{Init, Move}
 
-import scala.concurrent.duration
 import scala.language.postfixOps
 
 
 //#logger-companion
+
 object Arbitrator {
   //#printer-messages
-  def props(loggerActor: ActorRef): Props = Props(new Arbitrator(loggerActor))
+  def props(loggerActor: ActorRef)(implicit agarContext: AgarContext): Props = Props(new Arbitrator(loggerActor)(agarContext))
 
   final case class Start(numbers: Int)
 
@@ -31,7 +30,7 @@ object Arbitrator {
 
 //#arbitrator-actor
 
-class Arbitrator(loggerActor: ActorRef) extends Actor with ActorLogging {
+class Arbitrator(loggerActor: ActorRef)(implicit agarContext: AgarContext) extends Actor with ActorLogging {
 
   import Arbitrator._
   import context.dispatcher
@@ -66,8 +65,7 @@ class Arbitrator(loggerActor: ActorRef) extends Actor with ActorLogging {
           n -> (p, RunningPlayer)
       }
 
-      val d = duration.FiniteDuration(5, TimeUnit.SECONDS)
-      val cancellable = context.system.scheduler.scheduleOnce(d, self, TimeoutTurn)
+      val cancellable = context.system.scheduler.scheduleOnce(agarContext.system.timeout, self, TimeoutTurn)
 
       context.become(runGameTurn(newPlayers, cancellable))
 
@@ -112,15 +110,15 @@ class Arbitrator(loggerActor: ActorRef) extends Actor with ActorLogging {
   //
 
   private def runningPlayers(players: Universe): Map[Int, (ActorRef, PlayerStatus)] = players.filter {
-    case (_, (_,s)) => s == RunningPlayer
+    case (_, (_, s)) => s == RunningPlayer
   }
 
   private def waitingPlayers(players: Universe): Map[Int, (ActorRef, PlayerStatus)] = players.filter {
-    case (_, (_,s)) => s != RunningPlayer
+    case (_, (_, s)) => s != RunningPlayer
   }
 
   private def freshPlayer(n: Int): ActorRef = {
-    context.actorOf(Player.props(n, loggerActor))
+    context.actorOf(Player.props(n, loggerActor)(agarContext.algorithm))
   }
 }
 

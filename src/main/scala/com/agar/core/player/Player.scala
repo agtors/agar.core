@@ -2,13 +2,14 @@ package com.agar.core.player
 
 import akka.actor.{Actor, ActorRef, Props}
 import com.agar.core.arbritrator.Arbitrator.Played
+import com.agar.core.context.AgarAlgorithm
 import com.agar.core.logger.Logger.Movement
 import com.agar.core.player.Player.{Init, Move}
 
 //#player-companion
 
 object Player {
-  def props(number: Int, loggerActor: ActorRef): Props = Props(new Player(number, loggerActor))
+  def props(number: Int, loggerActor: ActorRef)(implicit algorithm: AgarAlgorithm): Props = Props(new Player(number, loggerActor, algorithm))
 
   //player-messages
   case class Init(p: (Int, Int))
@@ -22,7 +23,7 @@ object Player {
 //#player-actor
 
 // TODO - Weight to be added
-class Player(number: Int, loggerActor: ActorRef) extends Actor {
+class Player(number: Int, loggerActor: ActorRef, implicit val agarContext: AgarAlgorithm) extends Actor {
 
   def receive: PartialFunction[Any, Unit] = {
     case Init(p) =>
@@ -31,7 +32,7 @@ class Player(number: Int, loggerActor: ActorRef) extends Actor {
 
   def playing(p: (Int, Int)): PartialFunction[Any, Unit] = {
     case Move =>
-      val np = (p._1 + 1, p._2 + 1)
+      val np = agarContext.move(p)
       loggerActor ! Movement(number, np) // Log movement
       sender() ! Played(number, np) // Notify played movement
       context.become(playing(np))

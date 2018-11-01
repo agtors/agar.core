@@ -3,6 +3,7 @@ package com.agar.core.player
 
 import akka.actor.ActorSystem
 import akka.testkit.{TestKit, TestProbe}
+import com.agar.core.context.{AgarAlgorithm, TestAgarContext}
 import com.agar.core.logger.Logger.Movement
 import com.agar.core.player.Player.{Init, Move}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
@@ -28,6 +29,8 @@ class PlayerSpec(_system: ActorSystem)
   //#specification-example
   "A Player Actor" should {
     "move when Move is received" in {
+      implicit val algorithm: AgarAlgorithm = TestAgarContext.algorithm
+
       //#specification-example
       val testProbe = TestProbe()
       val player = system.actorOf(Player.props(0, testProbe.ref))
