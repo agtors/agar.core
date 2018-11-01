@@ -1,7 +1,8 @@
 package com.agar.core.arbritrator
 
-import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, PoisonPill, Props}
+import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, Props}
 import com.agar.core.context.AgarContext
+import com.agar.core.logger.Logger
 import com.agar.core.player.Player
 import com.agar.core.player.Player.{Init, Move}
 
@@ -30,7 +31,7 @@ object Arbitrator {
 
 //#arbitrator-actor
 
-class Arbitrator(loggerActor: ActorRef)(implicit agarContext: AgarContext) extends Actor with ActorLogging {
+class Arbitrator(logger: ActorRef)(implicit agarContext: AgarContext) extends Actor with ActorLogging {
 
   import Arbitrator._
   import context.dispatcher
@@ -41,11 +42,12 @@ class Arbitrator(loggerActor: ActorRef)(implicit agarContext: AgarContext) exten
 
   def receive: PartialFunction[Any, Unit] = {
     case Start(numbers) =>
-      val players = (0 to numbers)
+      val players = (0 until numbers)
         .map { n =>
           val player = freshPlayer(n)
-          val position = (0, 0)
+          val position = agarContext.position.fresh()
           player ! Init(position)
+          logger ! Logger.PlayerCreated(n, position)
           n -> (player, WaitingPlayer(position))
         }.toMap
 
@@ -65,13 +67,16 @@ class Arbitrator(loggerActor: ActorRef)(implicit agarContext: AgarContext) exten
           n -> (p, RunningPlayer)
       }
 
-      val cancellable = context.system.scheduler.scheduleOnce(agarContext.system.timeout, self, TimeoutTurn)
+      val cancellable = context.system.scheduler.scheduleOnce(agarContext.system.timeout(), self, TimeoutTurn)
 
       context.become(runGameTurn(newPlayers, cancellable))
 
     case SolveTurn =>
       // Should detect collision and kill weakest actor
       self ! NewTurn
+
+    case e =>
+      println(s"Receive unexpected event $e")
   }
 
   //
@@ -82,6 +87,7 @@ class Arbitrator(loggerActor: ActorRef)(implicit agarContext: AgarContext) exten
     case Played(number, position) =>
       val newPlayers = players.get(number).map {
         case (p, _) =>
+          logger ! Logger.PlayerMoved(number, position)
           number -> (p, WaitingPlayer(position))
       }.fold {
         players
@@ -89,20 +95,20 @@ class Arbitrator(loggerActor: ActorRef)(implicit agarContext: AgarContext) exten
         players + _
       }
 
-      if (runningPlayers(newPlayers).isEmpty) {
-        cancellable.cancel()
-        context.become(startGameTurn(newPlayers))
-        self ! SolveTurn
-      }
+      context.become(runGameTurn(newPlayers, cancellable))
 
     case TimeoutTurn =>
       runningPlayers(players).foreach { case (n, (p, _)) =>
         // kill this actor
-        p ! PoisonPill
+        logger ! Logger.PlayerDestroyed(n)
+        context.stop(p)
       }
 
       context.become(startGameTurn(waitingPlayers(players)))
       self ! SolveTurn
+
+    case e =>
+      println(s"Receive unexpected event $e")
   }
 
   //
@@ -110,15 +116,15 @@ class Arbitrator(loggerActor: ActorRef)(implicit agarContext: AgarContext) exten
   //
 
   private def runningPlayers(players: Universe): Map[Int, (ActorRef, PlayerStatus)] = players.filter {
-    case (_, (_, s)) => s == RunningPlayer
+    case (_, (_, s)) => s.equals(RunningPlayer)
   }
 
   private def waitingPlayers(players: Universe): Map[Int, (ActorRef, PlayerStatus)] = players.filter {
-    case (_, (_, s)) => s != RunningPlayer
+    case (_, (_, s)) => !s.equals(RunningPlayer)
   }
 
   private def freshPlayer(n: Int): ActorRef = {
-    context.actorOf(Player.props(n, loggerActor)(agarContext.algorithm))
+    context.actorOf(Player.props(n)(agarContext.algorithm), name = s"player-$n")
   }
 }
 

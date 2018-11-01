@@ -4,6 +4,6 @@ import scala.concurrent.duration.FiniteDuration
 
 trait AgarSystem {
 
-  def timeout: FiniteDuration
+  def timeout(): FiniteDuration
 
 }

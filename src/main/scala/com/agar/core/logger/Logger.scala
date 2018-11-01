@@ -9,7 +9,11 @@ object Logger {
 
   def props: Props = Props[Arbitrator]
 
-  final case class Movement(number: Int, position: (Int, Int))
+  final case class PlayerCreated(number: Int, position: (Int, Int))
+
+  final case class PlayerMoved(number: Int, position: (Int, Int))
+
+  final case class PlayerDestroyed(number: Int)
 
 }
 
@@ -21,8 +25,8 @@ class Logger extends Actor with ActorLogging {
 
   import Logger._
 
-  def receive = {
-    case Movement(number, position) =>
+  def receive: PartialFunction[Any, Unit] = {
+    case PlayerMoved(number, position) =>
       log.info(s"player $number at $position")
   }
 }
