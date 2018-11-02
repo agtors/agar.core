@@ -61,6 +61,8 @@ class Arbitrator(logger: ActorRef)(implicit agarContext: AgarContext) extends Ac
 
   def startGameTurn(players: Universe): PartialFunction[Any, Unit] = {
     case NewTurn =>
+      log.info(s"Start new turn with ${players.size} players")
+
       val newPlayers = players.map {
         case (n, (p, _)) =>
           p ! Move

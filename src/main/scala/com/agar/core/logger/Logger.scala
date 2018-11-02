@@ -27,10 +27,10 @@ class Logger extends Actor with ActorLogging {
 
   def receive: PartialFunction[Any, Unit] = {
     case PlayerCreated(number, position) =>
-      log.info(s"player $number created at $position")
+      // log.info(s"player $number created at $position")
 
     case PlayerMoved(number, position) =>
-      log.info(s"player $number move at $position")
+      // log.info(s"player $number move at $position")
 
     case PlayerDestroyed(number) =>
       log.info(s"player $number destroyed")
