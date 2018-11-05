@@ -5,19 +5,18 @@ import com.agar.core.context.AgarContext
 import com.agar.core.logger.Logger
 import com.agar.core.player.Player
 import com.agar.core.player.Player.{Init, Move}
+import com.agar.core.utils.Point2d
 
 import scala.language.postfixOps
 
 
-//#logger-companion
-
 object Arbitrator {
-  //#printer-messages
+
   def props(loggerActor: ActorRef)(implicit agarContext: AgarContext): Props = Props(new Arbitrator(loggerActor)(agarContext))
 
   final case class Start(numbers: Int)
 
-  final case class Played(number: Int, position: (Int, Int))
+  final case class Played(number: Int, position: Point2d)
 
   case object NewTurn
 
@@ -27,18 +26,12 @@ object Arbitrator {
 
 }
 
-//#logger-companion
-
-//#arbitrator-actor
-
 class Arbitrator(logger: ActorRef)(implicit agarContext: AgarContext) extends Actor with ActorLogging {
 
   import Arbitrator._
   import context.dispatcher
 
   type Universe = Map[Int, (ActorRef, PlayerStatus)]
-
-  // Initial behavior
 
   def receive: PartialFunction[Any, Unit] = {
     case Start(numbers) =>

@@ -1,7 +1,9 @@
 package com.agar.core.context
 
+import com.agar.core.utils.Point2d
+
 trait AgarPosition {
 
-  def fresh(): (Int, Int)
+  def fresh(): Point2d
 
 }

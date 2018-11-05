@@ -23,7 +23,7 @@ object Behavior {
   // the only difference is that the pursuer will not seek the target itself, but its position in the near future.
   // TODO: please change the signature of target... really please
   def pursuit(target: (Vector2d, Vector2d) , position: Vector2d, velocity: Vector2d, maxVelocity: Short): Steering = {
-    val futurePosition = target._1 + target._2 * maxVelocity;
+    val futurePosition = target._1 + target._2 * maxVelocity
     seek(futurePosition, position, velocity, maxVelocity)
   }
 
@@ -32,8 +32,8 @@ object Behavior {
   // TODO: please change the signature of target... really please
   def evade(target: (Vector2d, Vector2d) , position: Vector2d, velocity: Vector2d, maxVelocity: Short): Steering = {
     val distance = target._1 - position
-    var updatesAhead = distance.magnitude() / maxVelocity;
-    val futurePosition = target._1 + target._2 * maxVelocity;
+    var updatesAhead = distance.magnitude() / maxVelocity
+    val futurePosition = target._1 + target._2 * maxVelocity
     flee(futurePosition, position, velocity, maxVelocity)
   }
 }

@@ -6,6 +6,7 @@ import com.agar.core.arbritrator.Arbitrator
 import com.agar.core.arbritrator.Arbitrator.Start
 import com.agar.core.context.{AgarAlgorithm, AgarContext, AgarPosition, AgarSystem}
 import com.agar.core.logger.Logger.{PlayerCreated, PlayerDestroyed, PlayerMoved}
+import com.agar.core.utils.Point2d
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.concurrent.duration._
@@ -30,8 +31,8 @@ class ArbitratorSpec(_system: ActorSystem)
 
       implicit val context: AgarContext = new AgarContext {
         override val system: AgarSystem = () => 5 seconds
-        override val position: AgarPosition = () => (0, 0)
-        override val algorithm: AgarAlgorithm = p => (p._1 + 1, p._2 + 1)
+        override val position: AgarPosition = () => Point2d(0, 0)
+        override val algorithm: AgarAlgorithm = p => Point2d(p.x + 1, p.y + 1)
       }
 
       val testProbe = TestProbe()
@@ -39,7 +40,7 @@ class ArbitratorSpec(_system: ActorSystem)
 
       arbitrator ! Start(1)
 
-      testProbe.expectMsg(500 millis, PlayerCreated(0, (0, 0)))
+      testProbe.expectMsg(500 millis, PlayerCreated(0, Point2d(0, 0)))
     }
   }
 
@@ -48,8 +49,8 @@ class ArbitratorSpec(_system: ActorSystem)
 
       implicit val context: AgarContext = new AgarContext {
         override val system: AgarSystem = () => 5 seconds
-        override val position: AgarPosition = () => (0, 0)
-        override val algorithm: AgarAlgorithm = p => (p._1 + 1, p._2 + 1)
+        override val position: AgarPosition = () => Point2d(0, 0)
+        override val algorithm: AgarAlgorithm = p => Point2d(p.x + 1, p.y + 1)
       }
 
       val testProbe = TestProbe()
@@ -57,8 +58,8 @@ class ArbitratorSpec(_system: ActorSystem)
 
       arbitrator ! Start(1)
 
-      testProbe.expectMsg(500 millis, PlayerCreated(0, (0, 0)))
-      testProbe.expectMsg(500 millis, PlayerMoved(0, (1, 1)))
+      testProbe.expectMsg(500 millis, PlayerCreated(0, Point2d(0, 0)))
+      testProbe.expectMsg(500 millis, PlayerMoved(0, Point2d(1, 1)))
     }
   }
 
@@ -67,7 +68,7 @@ class ArbitratorSpec(_system: ActorSystem)
 
       implicit val context: AgarContext = new AgarContext {
         override val system: AgarSystem = () => 100 millis
-        override val position: AgarPosition = () => (0, 0)
+        override val position: AgarPosition = () => Point2d(0, 0)
         override val algorithm: AgarAlgorithm = p => {
           Thread.sleep(1000)
           p
@@ -80,7 +81,7 @@ class ArbitratorSpec(_system: ActorSystem)
 
       arbitrator ! Start(1)
 
-      testProbe.expectMsg(500 millis, PlayerCreated(0, (0, 0)))
+      testProbe.expectMsg(500 millis, PlayerCreated(0, Point2d(0, 0)))
       testProbe.expectMsg(500 millis, PlayerDestroyed(0))
     }
   }

@@ -4,22 +4,16 @@ import akka.actor.{Actor, Props}
 import com.agar.core.arbritrator.Arbitrator
 import com.agar.core.context.AgarAlgorithm
 import com.agar.core.player.Player.{Init, Move}
-
-//#player-companion
+import com.agar.core.utils.Point2d
 
 object Player {
   def props(number: Int)(implicit algorithm: AgarAlgorithm): Props = Props(new Player(number, algorithm))
 
-  //player-messages
-  case class Init(p: (Int, Int))
+  case class Init(p: Point2d)
 
   case object Move
 
 }
-
-//#player-companion
-
-//#player-actor
 
 // TODO - Weight to be added
 class Player(number: Int, implicit val algorithm: AgarAlgorithm) extends Actor {
@@ -29,12 +23,10 @@ class Player(number: Int, implicit val algorithm: AgarAlgorithm) extends Actor {
       context.become(playing(p))
   }
 
-  def playing(p: (Int, Int)): PartialFunction[Any, Unit] = {
+  def playing(p: Point2d): PartialFunction[Any, Unit] = {
     case Move =>
       val np = algorithm.move(p)
       sender ! Arbitrator.Played(number, np)
       context.become(playing(np))
   }
 }
-
-//#player-actor
