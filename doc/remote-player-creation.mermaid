@@ -1,0 +1,16 @@
+sequenceDiagram
+    participant Logger1
+    participant Region1
+    participant Arbitre1
+    participant Player
+    participant Virtual
+    participant Bridge
+    participant Region2
+
+Region1  ->>  Arbitre1:Set(P*AOI)
+Region1  ->>  Logger1:Set(P*AOI)
+Arbitre1 ->>  Player:Tick(AOI)
+Player   -->> Arbitre1:Moved(P*Position)
+Arbitre1 -->> Region1:Moved(P*Position)
+Region1  ->>  Bridge:CreateVirtual(P*Position)
+Bridge   ->>  Region2:CreateVirtual(P*Position)
