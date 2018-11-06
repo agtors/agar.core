@@ -36,12 +36,33 @@ class Vector2d(val x: Double, val y: Double) {
   /** Returns the dot product of two vectors. */
   def dot(v: Vector2d): Double = x * v.x + y * v.y
 
-  /** Returns a unit vector in the direction of this vector. */
-  def normalize(): Vector2d = this / this.dot(this)
+  /** Returns a unit vector in the direction of this vector.
+    * x = ax / |a|
+    * y = ay / |a|
+    * z = az / |a|
+    * */
+  def normalize(): Vector2d = this / this.magnitude()
 
   /** Returns the projection of this vector onto v. */
   def proj(v: Vector2d): Vector2d = v * (this.dot(v) / v.dot(v))
 
-  /** Returns the length of the vector */
+  /** Returns the length of the vector |a| = sqrt((ax * ax) + (ay * ay) + (az * az)) */
   def magnitude(): Double = Math.sqrt((x * x) + (y * y))
+
+  def canEqual(other: Any): Boolean =
+    other.isInstanceOf[Vector2d]
+
+  override def equals(other: Any): Boolean = {
+    other match {
+      case that: Vector2d =>
+        that.canEqual(Vector2d.this) &&
+          x == that.x &&
+          y == that.y
+      case _ => false
+    }
+  }
+
+  override def toString(): String = {
+    "Vector2d< x:" + x + ", y:" + y + ">"
+  }
 }
