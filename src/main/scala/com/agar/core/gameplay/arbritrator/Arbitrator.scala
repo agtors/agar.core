@@ -2,7 +2,7 @@ package com.agar.core.gameplay.arbritrator
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, PoisonPill, Props}
 import com.agar.core.context.AgarSystem
-import com.agar.core.gameplay.arbritrator.Player.{DestroyPlayer, MovePlayer, Tick}
+import com.agar.core.gameplay.arbritrator.Player._
 import com.agar.core.gameplay.arbritrator.Region.{AreaOfInterest, Players}
 
 import scala.language.postfixOps
@@ -17,33 +17,48 @@ object Player {
   type Position = Any
 
   case class Tick(area: AreaOfInterest)
+
   case class MovePlayer(player: ActorRef, position: Position)
+
   case class DestroyPlayer(player: ActorRef)
+
+  // -------------------------------------------------------------------------------------------------------------------
+
+  sealed trait Status
+
+  case object Ended extends Status
+
+  case object Running extends Status
+
+
 }
+
 // ---------------------------------------------------------------------------------------------------------------------
 
 object Arbitrator {
 
-  def props(loggerActor: ActorRef)(implicit agarContext: AgarSystem): Props = Props(new Arbitrator(loggerActor)(agarContext))
+  def props(region: ActorRef)(implicit agarContext: AgarSystem): Props = Props(new Arbitrator(region)(agarContext))
 
   // Messages
   case class NewGameTurn(players: Players)
+
   case object TimeOutTurn
 
 }
 
 class Arbitrator(region: ActorRef)(implicit agarSystem: AgarSystem) extends Actor with ActorLogging {
 
+
   import Arbitrator._
   import context.dispatcher
 
-  type Universe = Map[ActorRef, PlayerStatus]
+  type Universe = Map[ActorRef, Status]
 
-  def receive: PartialFunction[Any, Unit] = {
+  def receive: Receive = {
     case NewGameTurn(players) =>
       val waitingPlayers = players.map { case (player, area) =>
         player ! Tick(area)
-        player -> RunningPlayer
+        player -> Running
       }
 
       val cancellable = context.system.scheduler.scheduleOnce(agarSystem.timeout(), self, TimeOutTurn)
@@ -55,11 +70,11 @@ class Arbitrator(region: ActorRef)(implicit agarSystem: AgarSystem) extends Acto
   // Ongoing turn behavior
   //
 
-  def inProgressGameTurn(players: Universe, cancellable: Cancellable): PartialFunction[Any, Unit] = {
+  def inProgressGameTurn(players: Universe, cancellable: Cancellable): Receive = {
     case event@MovePlayer(actorReference, _) =>
       val newPlayers = players.get(actorReference).map { _ =>
         region ! event
-        actorReference -> WaitingPlayer
+        actorReference -> Ended
       }.fold {
         players
       } {
@@ -82,7 +97,7 @@ class Arbitrator(region: ActorRef)(implicit agarSystem: AgarSystem) extends Acto
   //
 
   private def runningPlayers(players: Universe): Universe = players.filter {
-    case (_, s) => s.equals(RunningPlayer)
+    case (_, s) => s.equals(Running)
   }
 
 }
