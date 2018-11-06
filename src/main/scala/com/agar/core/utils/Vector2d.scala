@@ -48,4 +48,21 @@ class Vector2d(val x: Double, val y: Double) {
 
   /** Returns the length of the vector |a| = sqrt((ax * ax) + (ay * ay) + (az * az)) */
   def magnitude(): Double = Math.sqrt((x * x) + (y * y))
+
+  def canEqual(other: Any): Boolean =
+    other.isInstanceOf[Vector2d]
+
+  override def equals(other: Any): Boolean = {
+    other match {
+      case that: Vector2d =>
+        that.canEqual(Vector2d.this) &&
+          x == that.x &&
+          y == that.y
+      case _ => false
+    }
+  }
+
+  override def toString(): String = {
+    "Vector2d< x:" + x + ", y:" + y + ">"
+  }
 }
