@@ -27,7 +27,7 @@ class ArbitratorSpec(_system: ActorSystem)
   }
 
   "A Player Actor" should {
-    "by created when a game is started" in {
+    "be created when a game is started" in {
 
       implicit val context: AgarContext = new AgarContext {
         override val system: AgarSystem = () => 5 seconds
@@ -42,9 +42,7 @@ class ArbitratorSpec(_system: ActorSystem)
 
       testProbe.expectMsg(500 millis, PlayerCreated(0, Point2d(0, 0)))
     }
-  }
 
-  "A Player Actor" should {
     "move once a game has been started" in {
 
       implicit val context: AgarContext = new AgarContext {
@@ -61,9 +59,7 @@ class ArbitratorSpec(_system: ActorSystem)
       testProbe.expectMsg(500 millis, PlayerCreated(0, Point2d(0, 0)))
       testProbe.expectMsg(500 millis, PlayerMoved(0, Point2d(1, 1)))
     }
-  }
 
-  "A Player Actor" should {
     "be create and destroyed due to timeout" in {
 
       implicit val context: AgarContext = new AgarContext {
