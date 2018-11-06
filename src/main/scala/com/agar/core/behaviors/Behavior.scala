@@ -5,6 +5,8 @@ import com.agar.core.utils.Vector2d
 object Behavior {
   type Steering = Vector2d
 
+  case class TargetEntity(position: Vector2d, velocity: Vector2d)
+
   // Get the steering force that make the character run toward the target
   def seek(target: Vector2d, position: Vector2d, velocity: Vector2d, maxVelocity: Short): Steering = {
     val desiredVelocity = (target - position).normalize() * maxVelocity
@@ -21,19 +23,23 @@ object Behavior {
 
   // The pursuit behavior works pretty much the same way seek does,
   // the only difference is that the pursuer will not seek the target itself, but its position in the near future.
-  // TODO: please change the signature of target... really please
-  def pursuit(target: (Vector2d, Vector2d) , position: Vector2d, velocity: Vector2d, maxVelocity: Short): Steering = {
-    val futurePosition = target._1 + target._2 * maxVelocity
-    seek(futurePosition, position, velocity, maxVelocity)
+  def pursuit(target: TargetEntity, position: Vector2d, velocity: Vector2d, maxVelocity: Short): Steering = {
+    val targetFuturePosition = getFuturPositionAccordingTo(target, position, maxVelocity)
+    seek(targetFuturePosition, position, velocity, maxVelocity)
   }
 
   // The evade behavior is the opposite of the pursuit behavior.
   // Instead of seeking the target's future position, in the evade behavior the character will flee that position:
-  // TODO: please change the signature of target... really please
-  def evade(target: (Vector2d, Vector2d) , position: Vector2d, velocity: Vector2d, maxVelocity: Short): Steering = {
-    val distance = target._1 - position
-    var updatesAhead = distance.magnitude() / maxVelocity
-    val futurePosition = target._1 + target._2 * maxVelocity
-    flee(futurePosition, position, velocity, maxVelocity)
+  def evade(target: TargetEntity, position: Vector2d, velocity: Vector2d, maxVelocity: Short): Steering = {
+    val targetFuturePosition = getFuturPositionAccordingTo(target, position, maxVelocity)
+    flee(targetFuturePosition, position, velocity, maxVelocity)
+  }
+
+  // Get the futur position of an entity according to the position of another entity
+  private def getFuturPositionAccordingTo(target: TargetEntity, position: Vector2d, maxVelocity: Short): Vector2d = {
+    val distance = target.position - position
+    val updatesNeeded = distance.magnitude() / maxVelocity
+    val tv = target.velocity  * updatesNeeded
+    target.velocity + tv
   }
 }
