@@ -3,8 +3,8 @@ package com.agar.core.arbritrator
 import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, Props}
 import com.agar.core.context.AgarContext
 import com.agar.core.logger.Logger
-import com.agar.core.player.Player
-import com.agar.core.player.Player.{Init, Move}
+import com.agar.core.gameplay.player.Player
+import com.agar.core.gameplay.player.Player.{Init, Move}
 import com.agar.core.utils.Point2d
 
 import scala.language.postfixOps

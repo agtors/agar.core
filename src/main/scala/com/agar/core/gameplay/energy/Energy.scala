@@ -1,7 +1,7 @@
-package com.agar.core.energy
+package com.agar.core.gameplay.energy
 
 import akka.actor.{Actor, Props}
-import com.agar.core.energy.Energy.{Consume, Consumed}
+import com.agar.core.gameplay.energy.Energy.{Consume, Consumed}
 
 object Energy {
   def props(value: Int): Props = Props(new Energy(value))

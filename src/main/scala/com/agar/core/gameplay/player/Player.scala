@@ -1,9 +1,9 @@
-package com.agar.core.player
+package com.agar.core.gameplay.player
 
 import akka.actor.{Actor, Props}
 import com.agar.core.arbritrator.Arbitrator
 import com.agar.core.context.AgarAlgorithm
-import com.agar.core.player.Player.{Init, Move}
+import com.agar.core.gameplay.player.Player.{Init, Move}
 import com.agar.core.utils.Point2d
 
 object Player {

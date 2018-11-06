@@ -1,8 +1,8 @@
-package com.agar.core.behaviors
+package com.agar.core.gameplay
 
-import com.agar.core.behaviors.Behavior.TargetEntity
+import com.agar.core.gameplay.Behavior.TargetEntity
 import com.agar.core.utils.Vector2d
-import org.scalatest.{FlatSpec, Matchers, WordSpec}
+import org.scalatest.{Matchers, WordSpec}
 
 import scala.language.postfixOps
 

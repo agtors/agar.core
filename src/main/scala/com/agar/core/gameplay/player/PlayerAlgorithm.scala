@@ -1,4 +1,4 @@
-package com.agar.core.player
+package com.agar.core.gameplay.player
 
 trait PlayerAlgorithm {
 

@@ -1,4 +1,4 @@
-package com.agar.core.behaviors
+package com.agar.core.gameplay
 
 import com.agar.core.utils.Vector2d
 

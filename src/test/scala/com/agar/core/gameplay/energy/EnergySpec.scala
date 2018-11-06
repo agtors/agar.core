@@ -1,8 +1,8 @@
-package com.agar.core.energy
+package com.agar.core.gameplay.energy
 
 import akka.actor.ActorSystem
 import akka.testkit.{ImplicitSender, TestKit}
-import com.agar.core.energy.Energy.{Consume, Consumed}
+import com.agar.core.gameplay.energy.Energy.{Consume, Consumed}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.concurrent.duration._
