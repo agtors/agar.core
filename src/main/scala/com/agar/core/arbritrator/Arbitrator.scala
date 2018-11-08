@@ -1,9 +1,9 @@
-package com.agar.core.gameplay.arbritrator
+package com.agar.core.arbritrator
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, PoisonPill, Props}
 import com.agar.core.context.AgarSystem
-import com.agar.core.gameplay.arbritrator.Player._
-import com.agar.core.gameplay.arbritrator.Region.{AreaOfInterest, Players}
+import com.agar.core.arbritrator.Player._
+import com.agar.core.arbritrator.Region.{AreaOfInterest, Players}
 
 import scala.language.postfixOps
 

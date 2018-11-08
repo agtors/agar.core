@@ -1,11 +1,11 @@
-package com.agar.core.gameplay.arbitrator
+package com.agar.core.arbitrator
 
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.testkit.{TestKit, TestProbe}
 import com.agar.core.context.AgarSystem
-import com.agar.core.gameplay.arbritrator.Arbitrator
-import com.agar.core.gameplay.arbritrator.Arbitrator.NewGameTurn
-import com.agar.core.gameplay.arbritrator.Player.{DestroyPlayer, MovePlayer, Tick}
+import com.agar.core.arbritrator.Arbitrator
+import com.agar.core.arbritrator.Arbitrator.NewGameTurn
+import com.agar.core.arbritrator.Player.{DestroyPlayer, MovePlayer, Tick}
 import com.agar.core.utils.Point2d
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 

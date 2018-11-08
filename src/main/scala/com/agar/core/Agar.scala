@@ -2,7 +2,7 @@ package com.agar.core
 
 import akka.actor.{ActorRef, ActorSystem}
 import com.agar.core.context.{AgarSystem, DefaultAgarSystem}
-import com.agar.core.gameplay.arbritrator.Arbitrator
+import com.agar.core.arbritrator.Arbitrator
 import com.agar.core.logger.Logger
 
 //#main-class
