@@ -6,16 +6,16 @@ import java.util.UUID
 import akka.actor.{Actor, ActorRef, Props, Stash}
 import com.agar.core.context.AgarContext
 import com.agar.core.gameplay.energy.Energy
-import com.agar.core.gameplay.player.Player
+import com.agar.core.gameplay.player.{AreaOfInterest, Player}
 import com.agar.core.gameplay.player.Player.Init
 import com.agar.core.utils.{Point2d, Vector2d}
 
 
 // TODO -- move these definitions
 
-case class PlayerState(position: Point2d, weight: Int, velocity: Vector2d, virtual: Option[ActorRef] = Option.empty)
+case class PlayerState(position: Vector2d, weight: Int, velocity: Vector2d, virtual: Option[ActorRef] = Option.empty)
 
-case class EnergyState(position: Point2d, value: Int, virtual: Option[ActorRef] = Option.empty)
+case class EnergyState(position: Vector2d, value: Int, virtual: Option[ActorRef] = Option.empty)
 
 // ------------------------------
 
