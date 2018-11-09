@@ -34,7 +34,12 @@ class Region(arbitrator: ActorRef, logger: ActorRef)(width: Int, height: Int)(im
 
   import Region._
 
-  def uuid = UUID.randomUUID()
+  def MAX_ENERGY_VALUE = 10
+  def DEFAULT_VELOCITY = Vector2d(2, 2)
+  def WEIGHT_AT_START = 1
+
+
+  def id = UUID.randomUUID()
 
   var players: Map[ActorRef, PlayerState] = Map()
   var energies: Map[ActorRef, EnergyState] = Map()
@@ -58,18 +63,18 @@ class Region(arbitrator: ActorRef, logger: ActorRef)(width: Int, height: Int)(im
     this.players = (0 until nbOfPlayer)
       .map { n =>
         val player = freshPlayer(n)
-        val position = agarContext.position.fresh()
-
-        player ! Init(Point2d(r.nextInt(width), r.nextInt(height)))
-        player -> PlayerState(Point2d(0, 0), 0, Vector2d(0, 0))
+        val (xStart, yStart) = (r.nextInt(width), r.nextInt(height))
+        player ! Init(Point2d(xStart, yStart))
+        player -> PlayerState(Vector2d(xStart, yStart), WEIGHT_AT_START, DEFAULT_VELOCITY)
       }.toMap
 
     this.energies = (0 until nbOfStartingEnergy)
       .map { _ =>
         val id = UUID.randomUUID()
-        val energy = freshEnergy(id, 1 + r.nextInt(10))
-        val position = agarContext.position.fresh()
-        energy -> EnergyState(position, 10)
+        val position = Vector2d(r.nextInt(width), r.nextInt(height))
+        val powerOfTheEnergy = 1 + r.nextInt(MAX_ENERGY_VALUE)
+        val energy = freshEnergy(id, powerOfTheEnergy)
+        energy -> EnergyState(position, powerOfTheEnergy)
       }.toMap
   }
 
