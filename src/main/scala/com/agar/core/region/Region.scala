@@ -45,7 +45,7 @@ class Region(arbitrator: ActorRef, logger: ActorRef)(width: Int, height: Int)(im
   var energies: Map[ActorRef, EnergyState] = Map()
 
   def initialized: Receive = {
-    case GetEntitiesAOISet => sender ! ()
+    case GetEntitiesAOISet => sender ! AreaOfInterest.getPlayersAOISet(this.players, this.energies)
   }
 
   def receive: Receive = {

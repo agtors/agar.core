@@ -49,6 +49,8 @@ case class Vector2d(x: Double, y: Double) {
   /** Returns the length of the vector |a| = sqrt((ax * ax) + (ay * ay) + (az * az)) */
   def magnitude(): Double = Math.sqrt((x * x) + (y * y))
 
+  def euclideanDistance(v: Vector2d): Double = Math.sqrt(Math.pow(x - v.x, 2) + Math.pow(y - v.y, 2))
+
   def canEqual(other: Any): Boolean =
     other.isInstanceOf[Vector2d]
 
