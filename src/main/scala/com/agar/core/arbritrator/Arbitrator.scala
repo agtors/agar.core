@@ -76,6 +76,7 @@ class Arbitrator(region: ActorRef)(implicit agarSystem: AgarSystem) extends Acto
 
   def waitingForAOISet: Receive = {
     case AOISet(players) =>
+
       val waitingPlayers = players.map { case (player, area) =>
         player ! Tick(area)
         player -> Running
@@ -90,6 +91,7 @@ class Arbitrator(region: ActorRef)(implicit agarSystem: AgarSystem) extends Acto
 
   def inProgressGameTurn(players: PlayersStatus, cancellable: Cancellable): Receive = {
     case event@MovePlayer(player, _) =>
+
       val newPlayers = players.get(player).fold {
         players
       } { _ =>

@@ -2,14 +2,13 @@ package com.agar.core.region
 
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.testkit.{TestKit, TestProbe}
-import com.agar.core.context.{AgarAlgorithm, AgarContext, AgarPosition, AgarSystem}
+import com.agar.core.context.AgarSystem
 import com.agar.core.region.Region.{InitRegion, Initialized}
-import com.agar.core.utils.Point2d
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.concurrent.duration._
 
-class RegionTest (_system: ActorSystem)
+class RegionTest(_system: ActorSystem)
   extends TestKit(_system)
     with Matchers
     with WordSpecLike
@@ -24,10 +23,8 @@ class RegionTest (_system: ActorSystem)
   "A Region Actor" should {
 
     "initialize a fresh region with fresh entities" in {
-      implicit val context: AgarContext = new AgarContext {
-        override val system: AgarSystem = () => 2 seconds
-        override val position: AgarPosition = () => Point2d(0, 0)
-        override val algorithm: AgarAlgorithm = p => Point2d(p.x + 1, p.y + 1)
+      implicit val context: AgarSystem = new AgarSystem {
+        override val timeout: FiniteDuration = 2 seconds
       }
 
       val testProbe = TestProbe()
@@ -43,7 +40,7 @@ class RegionTest (_system: ActorSystem)
         }
       }
 
-      expectedCorrectInit should be (true)
+      expectedCorrectInit should be(true)
     }
   }
 
@@ -53,4 +50,5 @@ class RegionTest (_system: ActorSystem)
         a ! e
     }
   }
+
 }
