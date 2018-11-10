@@ -35,6 +35,19 @@ object Behavior {
     flee(targetFuturePosition, position, velocity, maxVelocity)
   }
 
+  // Produce small random displacements and apply to the character's current direction vector
+  def wander(currentVelocity: Vector2d, wanderDistance: Int, wanderRadius: Int): Steering = {
+    var circleCenter = currentVelocity.copy()
+    circleCenter = circleCenter.normalize()
+    circleCenter = circleCenter * wanderDistance
+
+    var displacement = Vector2d(0, -1)
+    displacement = displacement * wanderRadius
+
+    // wander force
+    circleCenter + displacement
+  }
+
   // Get the futur position of an entity according to the position of another entity
   private def getFuturPositionAccordingTo(target: TargetEntity, position: Vector2d, maxVelocity: Short): Vector2d = {
     val distance = target.position - position
