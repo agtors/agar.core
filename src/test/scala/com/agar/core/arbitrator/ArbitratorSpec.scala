@@ -1,11 +1,11 @@
 package com.agar.core.arbitrator
 
-import akka.actor.{Actor, ActorRef, ActorSystem, Props}
+import akka.actor.{Actor, ActorSystem, Props}
 import akka.testkit.{TestKit, TestProbe}
-import com.agar.core.context.AgarSystem
 import com.agar.core.arbritrator.Arbitrator
-import com.agar.core.arbritrator.Arbitrator.NewGameTurn
+import com.agar.core.arbritrator.ArbitratorProtocol.AOISet
 import com.agar.core.arbritrator.Player.{DestroyPlayer, MovePlayer, Tick}
+import com.agar.core.context.AgarSystem
 import com.agar.core.utils.Point2d
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
@@ -35,7 +35,7 @@ class ArbitratorSpec(_system: ActorSystem)
       val arbitrator = system.actorOf(Arbitrator.props(testProbe.ref))
       val player = system.actorOf(FakePlayer.props())
 
-      arbitrator ! NewGameTurn(Map(player -> ()))
+      arbitrator ! AOISet(Map(player -> ()))
 
       testProbe.expectMsg(500 millis, MovePlayer(player, Point2d(1, 1)))
     }
@@ -48,7 +48,7 @@ class ArbitratorSpec(_system: ActorSystem)
       val arbitrator = system.actorOf(Arbitrator.props(testProbe.ref), "arbitrator3")
       val player = system.actorOf(FakePlayer.props(respond = false))
 
-      arbitrator ! NewGameTurn(Map(player -> ()))
+      arbitrator ! AOISet(Map(player -> ()))
 
       testProbe.expectMsg(500 millis, DestroyPlayer(player))
     }

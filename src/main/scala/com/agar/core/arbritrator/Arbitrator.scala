@@ -4,6 +4,8 @@ import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, PoisonPill, Props
 import com.agar.core.arbritrator.Player._
 import com.agar.core.arbritrator.Region.{AreaOfInterest, Players}
 import com.agar.core.context.AgarSystem
+import com.agar.core.gameplay.player.AOI
+import com.agar.core.region.Region.GetEntitiesAOISet
 
 import scala.language.postfixOps
 
@@ -15,6 +17,8 @@ object Region {
 
 object Player {
   type Position = Any
+
+  case object StartGame
 
   case class Tick(area: AreaOfInterest)
 
@@ -43,7 +47,7 @@ object Arbitrator {
 
 object ArbitratorProtocol {
 
-  case class NewGameTurn(players: Players)
+  case class AOISet(players: Players)
 
   case object TimeOutTurn
 
@@ -51,20 +55,24 @@ object ArbitratorProtocol {
 
 class Arbitrator(region: ActorRef)(implicit agarSystem: AgarSystem) extends Actor with ActorLogging {
 
-  import context.dispatcher
   import com.agar.core.arbritrator.ArbitratorProtocol._
+  import context.dispatcher
 
-  type Universe = Map[ActorRef, Status]
+  type PlayersAOI = Map[ActorRef, AOI]
+  type PlayersStatus = Map[ActorRef, Status]
 
-  def receive: Receive =
-    waitingForNewGameTurn
+  override def receive: Receive = {
+    case StartGame =>
+      region ! GetEntitiesAOISet
+      context become waitingForNewGameTurn
+  }
 
   //
   // Waiting for new turn behavior
   //
 
   def waitingForNewGameTurn: Receive = {
-    case NewGameTurn(players) =>
+    case AOISet(players) =>
       val waitingPlayers = players.map { case (player, area) =>
         player ! Tick(area)
         player -> Running
@@ -77,7 +85,7 @@ class Arbitrator(region: ActorRef)(implicit agarSystem: AgarSystem) extends Acto
   // Ongoing turn behavior
   //
 
-  def inProgressGameTurn(players: Universe, cancellable: Cancellable): Receive = {
+  def inProgressGameTurn(players: PlayersStatus, cancellable: Cancellable): Receive = {
     case event@MovePlayer(player, _) =>
       val newPlayers = players.get(player).fold {
         players
@@ -105,7 +113,7 @@ class Arbitrator(region: ActorRef)(implicit agarSystem: AgarSystem) extends Acto
     context.system.scheduler.scheduleOnce(agarSystem.timeout(), self, TimeOutTurn)
   }
 
-  private def runningPlayers(players: Universe): Universe = players.filter {
+  private def runningPlayers(players: PlayersStatus): PlayersStatus = players.filter {
     case (_, status) => status.equals(Running)
   }
 
