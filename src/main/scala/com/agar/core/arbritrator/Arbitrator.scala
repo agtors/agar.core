@@ -82,24 +82,26 @@ class Arbitrator(region: ActorRef)(implicit agarSystem: AgarSystem) extends Acto
         player -> Running
       }
 
-      context become inProgressGameTurn(waitingPlayers, scheduleTurnTimeOut)
+      scheduleTurnTimeOut()
+
+      context become inProgressGameTurn(waitingPlayers)
   }
 
   //
   // Ongoing turn behavior
   //
 
-  def inProgressGameTurn(players: PlayersStatus, cancellable: Cancellable): Receive = {
+  def inProgressGameTurn(players: PlayersStatus): Receive = {
     case event@MovePlayer(player, _) =>
 
       val newPlayers = players.get(player).fold {
         players
       } { _ =>
         region ! event
-        players + (player -> Running)
+        players + (player -> Ended)
       }
 
-      context become inProgressGameTurn(newPlayers, cancellable)
+      context become inProgressGameTurn(newPlayers)
 
     case TimeOutTurn =>
       runningPlayers(players).foreach { case (player, _) =>
@@ -107,16 +109,16 @@ class Arbitrator(region: ActorRef)(implicit agarSystem: AgarSystem) extends Acto
         region ! DestroyPlayer(player)
       }
 
-      self ! StartGameTurn
-
       context become waitingForNewGameTurn
+
+      self ! StartGameTurn
   }
 
   //
   // Private behaviors
   //
 
-  private def scheduleTurnTimeOut: Cancellable = {
+  private def scheduleTurnTimeOut(): Cancellable = {
     context.system.scheduler.scheduleOnce(agarSystem.timeout(), self, TimeOutTurn)
   }
 

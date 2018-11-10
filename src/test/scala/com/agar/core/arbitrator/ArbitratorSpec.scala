@@ -51,11 +51,33 @@ class ArbitratorSpec(_system: ActorSystem)
       val player = system.actorOf(FakePlayer.props())
 
       arbitrator ! StartGameTurn
-      testProbe.expectMsg(500 millis, GetEntitiesAOISet)
 
+      testProbe.expectMsg(500 millis, GetEntitiesAOISet)
       // Simulate region response
       arbitrator ! AOISet(Map(player -> AOI(List(), List())))
       testProbe.expectMsg(500 millis, MovePlayer(player, Point2d(1, 1)))
+
+    }
+
+    "ask for player to move twice when AOISet is received" in {
+
+      implicit val agarSystem: AgarSystem = () => 1 second
+
+      val testProbe = TestProbe()
+      val arbitrator = system.actorOf(Arbitrator.props(testProbe.ref))
+      val player = system.actorOf(FakePlayer.props())
+
+      arbitrator ! StartGameTurn
+
+      testProbe.expectMsg(500 millis, GetEntitiesAOISet)
+      // Simulate region response
+      arbitrator ! AOISet(Map(player -> AOI(List(), List())))
+      testProbe.expectMsg(500 millis, MovePlayer(player, Point2d(1, 1)))
+
+      testProbe.expectMsg(1500 millis, GetEntitiesAOISet)
+      // Simulate region response
+      arbitrator ! AOISet(Map(player -> AOI(List(), List())))
+      testProbe.expectMsg(500 millis, MovePlayer(player, Point2d(2, 2)))
 
     }
 
@@ -85,10 +107,13 @@ class ArbitratorSpec(_system: ActorSystem)
 
   class FakePlayer(respond: Boolean) extends Actor {
 
+    var position = Point2d(0, 0)
+
     def receive: PartialFunction[Any, Unit] = {
       case Tick(_) =>
         if (respond) {
-          sender ! MovePlayer(self, Point2d(1, 1))
+          position = Point2d(position.x + 1, position.y + 1)
+          sender ! MovePlayer(self, position)
         }
     }
 
