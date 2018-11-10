@@ -18,7 +18,7 @@ object Region {
 object Player {
   type Position = Any
 
-  case object StartGame
+  case object StartGameTurn
 
   case class Tick(area: AreaOfInterest)
 
@@ -61,17 +61,25 @@ class Arbitrator(region: ActorRef)(implicit agarSystem: AgarSystem) extends Acto
   type PlayersAOI = Map[ActorRef, AOI]
   type PlayersStatus = Map[ActorRef, Status]
 
-  override def receive: Receive = {
-    case StartGame =>
+  override def receive: Receive = waitingForNewGameTurn
+
+  //
+  // Waiting for start turn behavior
+  //
+
+  def waitingForNewGameTurn: Receive = {
+    case StartGameTurn =>
+
       region ! GetEntitiesAOISet
-      context become waitingForNewGameTurn
+
+      context become waitingForAOISet
   }
 
   //
   // Waiting for new turn behavior
   //
 
-  def waitingForNewGameTurn: Receive = {
+  def waitingForAOISet: Receive = {
     case AOISet(players) =>
       val waitingPlayers = players.map { case (player, area) =>
         player ! Tick(area)
@@ -102,7 +110,9 @@ class Arbitrator(region: ActorRef)(implicit agarSystem: AgarSystem) extends Acto
         region ! DestroyPlayer(player)
       }
 
-      context become receive
+      self ! StartGameTurn
+
+      context become waitingForNewGameTurn
   }
 
   //
