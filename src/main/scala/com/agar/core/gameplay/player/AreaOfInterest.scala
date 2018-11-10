@@ -1,14 +1,19 @@
 package com.agar.core.gameplay.player
 
 import akka.actor.ActorRef
+import com.agar.core.gameplay.Behavior.TargetEntity
 import com.agar.core.region.{EnergyState, PlayerState}
 import com.agar.core.utils.Vector2d
 
 // ref can be the ActorRef of the virtual or the real actor
-case class PlayerInfos(position: Vector2d, velocity: Vector2d, weight: Int, ref: ActorRef)
+case class PlayerInfos(position: Vector2d, velocity: Vector2d, weight: Int, ref: ActorRef) {
+  def intoTargetEntity(): TargetEntity = TargetEntity(this.position, this.position)
+}
 
 // ref can be the ActorRef of the virtual or the real actor
-case class EnergyInfos(position: Vector2d, value: Int, ref: ActorRef)
+case class EnergyInfos(position: Vector2d, value: Int, ref: ActorRef) {
+  def intoTargetEntity(): TargetEntity = TargetEntity(this.position, Vector2d(0,0))
+}
 
 case class AOI(players: List[PlayerInfos], energies: List[EnergyInfos])
 
