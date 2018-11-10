@@ -4,10 +4,11 @@ package com.agar.core.region
 import java.util.UUID
 
 import akka.actor.{Actor, ActorRef, Props, Stash}
-import com.agar.core.context.AgarContext
+import com.agar.core.arbritrator.ArbitratorProtocol.AOISet
+import com.agar.core.context.AgarSystem
 import com.agar.core.gameplay.energy.Energy
-import com.agar.core.gameplay.player.{AreaOfInterest, Player}
 import com.agar.core.gameplay.player.Player.Init
+import com.agar.core.gameplay.player.{AreaOfInterest, Player}
 import com.agar.core.utils.{Point2d, Vector2d}
 
 
@@ -27,15 +28,17 @@ object Region {
 
   final case class Initialized(players: Map[ActorRef, PlayerState], energies: Map[ActorRef, EnergyState])
 
-  def props(arbitrator: ActorRef, logger: ActorRef, width: Int, height: Int)(implicit agarContext: AgarContext): Props = Props(new Region(arbitrator, logger)(width, height)(agarContext))
+  def props(arbitrator: ActorRef, logger: ActorRef, width: Int, height: Int)(implicit agarSystem: AgarSystem): Props = Props(new Region(arbitrator, logger)(width, height)(agarSystem))
 }
 
-class Region(arbitrator: ActorRef, logger: ActorRef)(width: Int, height: Int)(implicit agarContext: AgarContext) extends Actor with Stash {
+class Region(arbitrator: ActorRef, logger: ActorRef)(width: Int, height: Int)(implicit agarSystem: AgarSystem) extends Actor with Stash {
 
   import Region._
 
   def MAX_ENERGY_VALUE = 10
+
   def DEFAULT_VELOCITY = Vector2d(2, 2)
+
   def WEIGHT_AT_START = 1
 
 
@@ -45,7 +48,7 @@ class Region(arbitrator: ActorRef, logger: ActorRef)(width: Int, height: Int)(im
   var energies: Map[ActorRef, EnergyState] = Map()
 
   def initialized: Receive = {
-    case GetEntitiesAOISet => sender ! AreaOfInterest.getPlayersAOISet(this.players, this.energies)
+    case GetEntitiesAOISet => sender ! AOISet(AreaOfInterest.getPlayersAOISet(this.players, this.energies))
   }
 
   def receive: Receive = {
@@ -79,7 +82,7 @@ class Region(arbitrator: ActorRef, logger: ActorRef)(width: Int, height: Int)(im
   }
 
   private def freshPlayer(n: Int): ActorRef = {
-    context.actorOf(Player.props(n)(agarContext.algorithm), name = s"player-$n")
+    context.actorOf(Player.props(n), name = s"player-$n")
   }
 
   private def freshEnergy(id: UUID, valueOfEnergy: Int): ActorRef = {

@@ -17,7 +17,7 @@ class Energy(value: Int) extends Actor {
   def receive: PartialFunction[Any, Unit] = {
     case Consume =>
       sender ! Consumed(value)
-      context.become(consumed)
+      context become consumed
   }
 
   def consumed: PartialFunction[Any, Unit] = {

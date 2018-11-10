@@ -1,126 +1,131 @@
 package com.agar.core.arbritrator
 
-import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, Props}
-import com.agar.core.context.AgarContext
-import com.agar.core.logger.Logger
-import com.agar.core.gameplay.player.Player
-import com.agar.core.gameplay.player.Player.{Init, Move}
-import com.agar.core.utils.Point2d
+import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, PoisonPill, Props}
+import com.agar.core.arbritrator.Player._
+import com.agar.core.context.AgarSystem
+import com.agar.core.gameplay.player.AOI
+import com.agar.core.region.Region.GetEntitiesAOISet
 
 import scala.language.postfixOps
 
+// TEMPORARY DEFINITIONS -----------------------------------------------------------------------------------------------
 
-object Arbitrator {
+object Player {
+  type Position = Any
 
-  def props(loggerActor: ActorRef)(implicit agarContext: AgarContext): Props = Props(new Arbitrator(loggerActor)(agarContext))
+  case object StartGameTurn
 
-  final case class Start(numbers: Int)
+  case class Tick(area: AOI)
 
-  final case class Played(number: Int, position: Point2d)
+  case class MovePlayer(player: ActorRef, position: Position)
 
-  case object NewTurn
+  case class DestroyPlayer(player: ActorRef)
 
-  case object SolveTurn
+  // -------------------------------------------------------------------------------------------------------------------
 
-  case object TimeoutTurn
+  sealed trait Status
+
+  case object Ended extends Status
+
+  case object Running extends Status
+
 
 }
 
-class Arbitrator(logger: ActorRef)(implicit agarContext: AgarContext) extends Actor with ActorLogging {
+// ---------------------------------------------------------------------------------------------------------------------
 
-  import Arbitrator._
+object Arbitrator {
+
+  def props(region: ActorRef)(implicit agarContext: AgarSystem): Props = Props(new Arbitrator(region)(agarContext))
+
+}
+
+object ArbitratorProtocol {
+
+  case class AOISet(players: Map[ActorRef, AOI])
+
+  case object TimeOutTurn
+
+}
+
+class Arbitrator(region: ActorRef)(implicit agarSystem: AgarSystem) extends Actor with ActorLogging {
+
+  import com.agar.core.arbritrator.ArbitratorProtocol._
   import context.dispatcher
 
-  type Universe = Map[Int, (ActorRef, PlayerStatus)]
+  type PlayersAOI = Map[ActorRef, AOI]
+  type PlayersStatus = Map[ActorRef, Status]
 
-  def receive: PartialFunction[Any, Unit] = {
-    case Start(numbers) =>
-      val players = (0 until numbers)
-        .map { n =>
-          val player = freshPlayer(n)
-          val position = agarContext.position.fresh()
-          player ! Init(position)
-          logger ! Logger.PlayerCreated(n, position)
-          n -> (player, WaitingPlayer(position))
-        }.toMap
+  override def receive: Receive = waitingForNewGameTurn
 
-      context.become(startGameTurn(players))
-      self ! NewTurn
+  //
+  // Waiting for start turn behavior
+  //
+
+  def waitingForNewGameTurn: Receive = {
+    case StartGameTurn =>
+
+      region ! GetEntitiesAOISet
+
+      context become waitingForAOISet
   }
 
   //
-  // Start turn behavior
+  // Waiting for new turn behavior
   //
 
-  def startGameTurn(players: Universe): PartialFunction[Any, Unit] = {
-    case NewTurn =>
-      log.info(s"Start new turn with ${players.size} players")
+  def waitingForAOISet: Receive = {
+    case AOISet(players) =>
 
-      val newPlayers = players.map {
-        case (n, (p, _)) =>
-          p ! Move
-          n -> (p, RunningPlayer)
+      val waitingPlayers = players.map { case (player, area) =>
+        player ! Tick(area)
+        player -> Running
       }
 
-      val cancellable = context.system.scheduler.scheduleOnce(agarContext.system.timeout(), self, TimeoutTurn)
+      scheduleTurnTimeOut()
 
-      context.become(runGameTurn(newPlayers, cancellable))
-
-    case SolveTurn =>
-      // Should detect collision and kill weakest actor
-      self ! NewTurn
-
-    case e =>
-      println(s"Receive unexpected event $e")
+      context become inProgressGameTurn(waitingPlayers)
   }
 
   //
   // Ongoing turn behavior
   //
 
-  def runGameTurn(players: Universe, cancellable: Cancellable): PartialFunction[Any, Unit] = {
-    case Played(number, position) =>
-      val newPlayers = players.get(number).map {
-        case (p, _) =>
-          logger ! Logger.PlayerMoved(number, position)
-          number -> (p, WaitingPlayer(position))
-      }.fold {
+  def inProgressGameTurn(players: PlayersStatus): Receive = {
+    case event@MovePlayer(player, _) =>
+
+      val newPlayers = players.get(player).fold {
         players
-      } {
-        players + _
+      } { _ =>
+        region ! event
+        players + (player -> Ended)
       }
 
-      context.become(runGameTurn(newPlayers, cancellable))
+      context become inProgressGameTurn(newPlayers)
 
-    case TimeoutTurn =>
-      runningPlayers(players).foreach { case (n, (p, _)) =>
-        // kill this actor
-        logger ! Logger.PlayerDestroyed(n)
-        context.stop(p)
+    case TimeOutTurn =>
+      runningPlayers(players).foreach { case (player, _) =>
+        player ! PoisonPill
+        region ! DestroyPlayer(player)
       }
 
-      context.become(startGameTurn(waitingPlayers(players)))
-      self ! SolveTurn
+      context become waitingForNewGameTurn
 
-    case e =>
-      println(s"Receive unexpected event $e")
+      self ! StartGameTurn
   }
 
   //
   // Private behaviors
   //
 
-  private def runningPlayers(players: Universe): Map[Int, (ActorRef, PlayerStatus)] = players.filter {
-    case (_, (_, s)) => s.equals(RunningPlayer)
+  private def scheduleTurnTimeOut(): Cancellable = {
+    context.system.scheduler.scheduleOnce(agarSystem.timeout(), self, TimeOutTurn)
   }
 
-  private def waitingPlayers(players: Universe): Map[Int, (ActorRef, PlayerStatus)] = players.filter {
-    case (_, (_, s)) => !s.equals(RunningPlayer)
+  private def runningPlayers(players: PlayersStatus): PlayersStatus = players.filter {
+    case (_, status) => status.equals(Running)
   }
 
-  private def freshPlayer(n: Int): ActorRef = {
-    context.actorOf(Player.props(n)(agarContext.algorithm), name = s"player-$n")
-  }
 }
 
 //#arbitrator-actor

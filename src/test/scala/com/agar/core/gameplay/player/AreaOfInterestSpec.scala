@@ -2,14 +2,14 @@ package com.agar.core.gameplay.player
 
 import akka.actor.{Actor, ActorSystem, Props}
 import akka.testkit.TestKit
-import com.agar.core.context.{AgarAlgorithm, AgarContext, AgarPosition, AgarSystem}
+import com.agar.core.context.AgarSystem
 import com.agar.core.region.{EnergyState, PlayerState}
-import com.agar.core.utils.{Point2d, Vector2d}
+import com.agar.core.utils.Vector2d
 import org.scalatest.{Matchers, WordSpecLike}
 
 import scala.concurrent.duration._
 
-class AreaOfInterestSpec (_system: ActorSystem)
+class AreaOfInterestSpec(_system: ActorSystem)
   extends TestKit(_system)
     with WordSpecLike
     with Matchers {
@@ -18,11 +18,7 @@ class AreaOfInterestSpec (_system: ActorSystem)
 
   "An AreaOfInterest" should {
     "get the list of AOI for each players" in {
-      implicit val context: AgarContext = new AgarContext {
-        override val system: AgarSystem = () => 2 seconds
-        override val position: AgarPosition = () => Point2d(0, 0)
-        override val algorithm: AgarAlgorithm = p => Point2d(p.x + 1, p.y + 1)
-      }
+      implicit val context: AgarSystem = () => 2 seconds
 
       val playerStub1 = system.actorOf(Props(new StubActor()))
       val playerStub2 = system.actorOf(Props(new StubActor()))
@@ -44,16 +40,16 @@ class AreaOfInterestSpec (_system: ActorSystem)
 
       val areaOfInterestSet = AreaOfInterest.getPlayersAOISet(players, energies)
 
-      areaOfInterestSet.get(playerStub1) should be (
+      areaOfInterestSet.get(playerStub1) should be(
         Some(
           AOI(
-            List(PlayerInfos(Vector2d(300, 400),Vector2d(2, 2), 10, playerStub2)),
+            List(PlayerInfos(Vector2d(300, 400), Vector2d(2, 2), 10, playerStub2)),
             List(EnergyInfos(Vector2d(200, 200), 10, energyStub1))
           )
         )
       )
 
-      areaOfInterestSet.get(playerStub2) should be (
+      areaOfInterestSet.get(playerStub2) should be(
         Some(
           AOI(
             List(PlayerInfos(Vector2d(100, 100), Vector2d(2, 2), 10, playerStub1)),
@@ -62,7 +58,7 @@ class AreaOfInterestSpec (_system: ActorSystem)
         )
       )
 
-      areaOfInterestSet.get(playerStub3) should be (
+      areaOfInterestSet.get(playerStub3) should be(
         Some(
           AOI(
             List.empty,
@@ -74,6 +70,9 @@ class AreaOfInterestSpec (_system: ActorSystem)
   }
 
   class StubActor() extends Actor {
-    override def receive: Receive = { case e => sender ! e }
+    override def receive: Receive = {
+      case e => sender ! e
+    }
   }
+
 }

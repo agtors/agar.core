@@ -1,11 +1,13 @@
 package com.agar.core.arbitrator
 
-import akka.actor.{Actor, ActorRef, ActorSystem, Props}
+import akka.actor.{Actor, ActorSystem, Props}
 import akka.testkit.{TestKit, TestProbe}
 import com.agar.core.arbritrator.Arbitrator
-import com.agar.core.arbritrator.Arbitrator.Start
-import com.agar.core.context.{AgarAlgorithm, AgarContext, AgarPosition, AgarSystem}
-import com.agar.core.logger.Logger.{PlayerCreated, PlayerDestroyed, PlayerMoved}
+import com.agar.core.arbritrator.ArbitratorProtocol.AOISet
+import com.agar.core.arbritrator.Player.{DestroyPlayer, MovePlayer, StartGameTurn, Tick}
+import com.agar.core.context.AgarSystem
+import com.agar.core.gameplay.player.AOI
+import com.agar.core.region.Region.GetEntitiesAOISet
 import com.agar.core.utils.Point2d
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
@@ -26,68 +28,97 @@ class ArbitratorSpec(_system: ActorSystem)
     shutdown(system)
   }
 
-  "A Player Actor" should {
-    "be created when a game is started" in {
+  "An Arbitrator Actor" should {
+    "ask for AOISet when game starts" in {
 
-      implicit val context: AgarContext = new AgarContext {
-        override val system: AgarSystem = () => 5 seconds
-        override val position: AgarPosition = () => Point2d(0, 0)
-        override val algorithm: AgarAlgorithm = p => Point2d(p.x + 1, p.y + 1)
-      }
+      implicit val agarSystem: AgarSystem = () => 1 second
 
       val testProbe = TestProbe()
-      val arbitrator = system.actorOf(Arbitrator.props(testProbe.ref), "arbitrator1")
+      val arbitrator = system.actorOf(Arbitrator.props(testProbe.ref))
 
-      arbitrator ! Start(1)
+      arbitrator ! StartGameTurn
 
-      testProbe.expectMsg(500 millis, PlayerCreated(0, Point2d(0, 0)))
+      testProbe.expectMsg(500 millis, GetEntitiesAOISet)
+
     }
 
-    "move once a game has been started" in {
+    "ask for player to move when AOISet is received" in {
 
-      implicit val context: AgarContext = new AgarContext {
-        override val system: AgarSystem = () => 5 seconds
-        override val position: AgarPosition = () => Point2d(0, 0)
-        override val algorithm: AgarAlgorithm = p => Point2d(p.x + 1, p.y + 1)
-      }
+      implicit val agarSystem: AgarSystem = () => 1 second
 
       val testProbe = TestProbe()
-      val arbitrator = system.actorOf(Arbitrator.props(testProbe.ref), "arbitrator2")
+      val arbitrator = system.actorOf(Arbitrator.props(testProbe.ref))
+      val player = system.actorOf(FakePlayer.props())
 
-      arbitrator ! Start(1)
+      arbitrator ! StartGameTurn
 
-      testProbe.expectMsg(500 millis, PlayerCreated(0, Point2d(0, 0)))
-      testProbe.expectMsg(500 millis, PlayerMoved(0, Point2d(1, 1)))
+      testProbe.expectMsg(500 millis, GetEntitiesAOISet)
+      // Simulate region response
+      arbitrator ! AOISet(Map(player -> AOI(List(), List())))
+      testProbe.expectMsg(500 millis, MovePlayer(player, Point2d(1, 1)))
+
     }
 
-    "be create and destroyed due to timeout" in {
+    "ask for player to move twice when AOISet is received" in {
 
-      implicit val context: AgarContext = new AgarContext {
-        override val system: AgarSystem = () => 100 millis
-        override val position: AgarPosition = () => Point2d(0, 0)
-        override val algorithm: AgarAlgorithm = p => {
-          Thread.sleep(1000)
-          p
+      implicit val agarSystem: AgarSystem = () => 1 second
+
+      val testProbe = TestProbe()
+      val arbitrator = system.actorOf(Arbitrator.props(testProbe.ref))
+      val player = system.actorOf(FakePlayer.props())
+
+      arbitrator ! StartGameTurn
+
+      testProbe.expectMsg(500 millis, GetEntitiesAOISet)
+      // Simulate region response
+      arbitrator ! AOISet(Map(player -> AOI(List(), List())))
+      testProbe.expectMsg(500 millis, MovePlayer(player, Point2d(1, 1)))
+
+      testProbe.expectMsg(1500 millis, GetEntitiesAOISet)
+      // Simulate region response
+      arbitrator ! AOISet(Map(player -> AOI(List(), List())))
+      testProbe.expectMsg(500 millis, MovePlayer(player, Point2d(2, 2)))
+
+    }
+
+    "ask for player to die when AOISet is received and timeout reached" in {
+
+      implicit val agarSystem: AgarSystem = () => 100 millis
+
+      val testProbe = TestProbe()
+      val arbitrator = system.actorOf(Arbitrator.props(testProbe.ref), "arbitrator3")
+      val player = system.actorOf(FakePlayer.props(respond = false))
+
+      arbitrator ! StartGameTurn
+      testProbe.expectMsg(500 millis, GetEntitiesAOISet)
+
+      // Simulate region response
+      arbitrator ! AOISet(Map(player -> AOI(List(), List())))
+      testProbe.expectMsg(500 millis, DestroyPlayer(player))
+
+    }
+  }
+
+  // FAKE PLAYER
+
+  object FakePlayer {
+    def props(respond: Boolean = true): Props = Props(new FakePlayer(respond))
+  }
+
+  class FakePlayer(respond: Boolean) extends Actor {
+
+    var position = Point2d(0, 0)
+
+    def receive: PartialFunction[Any, Unit] = {
+      case Tick(_) =>
+        if (respond) {
+          position = Point2d(position.x + 1, position.y + 1)
+          sender ! MovePlayer(self, position)
         }
-      }
-
-      val testProbe = TestProbe()
-      val tracer = system.actorOf(Props(new Tracer(testProbe.ref)))
-      val arbitrator = system.actorOf(Arbitrator.props(tracer), "arbitrator3")
-
-      arbitrator ! Start(1)
-
-      testProbe.expectMsg(500 millis, PlayerCreated(0, Point2d(0, 0)))
-      testProbe.expectMsg(500 millis, PlayerDestroyed(0))
     }
+
   }
 
-  class Tracer(a: ActorRef) extends Actor {
-    override def receive: Receive = {
-      case e =>
-        a ! e
-    }
-  }
 
 }
 
