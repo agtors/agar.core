@@ -18,7 +18,7 @@ object Player {
   case object RunAway extends State
   case object Wander extends State
 
-  def props(position: Vector2d, weight: Int)(arbitrator: ActorRef): Props = Props(new Player(position, weight)(arbitrator))
+  def props(position: Vector2d, weight: Int): Props = Props(new Player(position, weight))
 
   case class Tick(aoi: AOI)
 
@@ -27,7 +27,7 @@ object Player {
   case class EatSuccess(weight: Int)
 }
 
-class Player (var position: Vector2d, var weight: Int, var activeState: List[State] = List(CollectEnergy))(arbitrator: ActorRef) extends Actor {
+class Player (var position: Vector2d, var weight: Int, var activeState: List[State] = List(CollectEnergy)) extends Actor {
 
   import com.agar.core.gameplay.player.Player._
 
@@ -37,7 +37,7 @@ class Player (var position: Vector2d, var weight: Int, var activeState: List[Sta
   override def receive(): Receive = {
     case Tick(areaOfInterest) =>
       update(areaOfInterest)
-      arbitrator ! MovePlayer(self, Vector2d(position.x, position.y))
+      sender ! MovePlayer(self, Vector2d(position.x, position.y))
     case Consumed(v) =>
       this.weight += v
       //TODO send message to region

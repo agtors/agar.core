@@ -4,6 +4,7 @@ import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, PoisonPill, Props
 import com.agar.core.arbritrator.Player._
 import com.agar.core.context.AgarSystem
 import com.agar.core.gameplay.player.AOI
+import com.agar.core.gameplay.player.Player.Tick
 import com.agar.core.region.Region.GetEntitiesAOISet
 
 import scala.language.postfixOps
@@ -14,8 +15,6 @@ object Player {
   type Position = Any
 
   case object StartGameTurn
-
-  case class Tick(area: AOI)
 
   case class MovePlayer(player: ActorRef, position: Position)
 

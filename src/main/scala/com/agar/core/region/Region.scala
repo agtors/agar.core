@@ -5,7 +5,6 @@ import java.util.UUID
 
 import akka.actor.{Actor, ActorRef, Props, Stash}
 import com.agar.core.arbritrator.ArbitratorProtocol.AOISet
-import com.agar.core.context.AgarSystem
 import com.agar.core.gameplay.energy.Energy
 import com.agar.core.gameplay.player.{AreaOfInterest, Player}
 import com.agar.core.utils.Vector2d
@@ -27,10 +26,10 @@ object Region {
 
   final case class Initialized(players: Map[ActorRef, PlayerState], energies: Map[ActorRef, EnergyState])
 
-  def props(arbitrator: ActorRef, logger: ActorRef, width: Int, height: Int)(implicit agarSystem: AgarSystem): Props = Props(new Region(arbitrator, logger)(width, height)(agarSystem))
+  def props(journal: ActorRef, width: Int, height: Int): Props = Props(new Region(journal)(width, height))
 }
 
-class Region(arbitrator: ActorRef, logger: ActorRef)(width: Int, height: Int)(implicit agarSystem: AgarSystem) extends Actor with Stash {
+class Region(journal: ActorRef)(width: Int, height: Int) extends Actor with Stash {
 
   import Region._
 
@@ -47,14 +46,15 @@ class Region(arbitrator: ActorRef, logger: ActorRef)(width: Int, height: Int)(im
   var energies: Map[ActorRef, EnergyState] = Map()
 
   def initialized: Receive = {
-    case GetEntitiesAOISet => sender ! AOISet(AreaOfInterest.getPlayersAOISet(this.players, this.energies))
+    case GetEntitiesAOISet =>
+      sender ! AOISet(AreaOfInterest.getPlayersAOISet(this.players, this.energies))
   }
 
   def receive: Receive = {
     case InitRegion(nbOfPlayer, nbOfStartingEnergy) =>
       initializeEntities(nbOfPlayer, nbOfStartingEnergy)
       context become initialized
-      logger ! Initialized(this.players, this.energies)
+      journal ! Initialized(this.players, this.energies)
 
     case _ => stash()
   }
@@ -79,7 +79,7 @@ class Region(arbitrator: ActorRef, logger: ActorRef)(width: Int, height: Int)(im
   }
 
   private def createNewPlayer(position: Vector2d): ActorRef = {
-    context.actorOf(Player.props(position, WEIGHT_AT_START)(self))
+    context.actorOf(Player.props(position, WEIGHT_AT_START))
   }
 
   private def createNewEnergy(valueOfEnergy: Int): ActorRef = {
