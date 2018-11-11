@@ -71,13 +71,13 @@ class Player (var position: Vector2d, var weight: Int, var activeState: List[Sta
 
   private def tryToEatThePlayer(playerInfos: PlayerInfos): Unit = {
     //TODO: maybe we should control the distance between the players in a Coordinator actor
-    if (playerInfos.position.euclideanDistance(position) <= 2)
+    if (playerInfos.position.euclideanDistance(position) <= this.radiusPlayer())
       playerInfos.ref ! Eat
   }
 
   private def tryConsumeTheEnergie(energyInfos: EnergyInfos) {
     //TODO: maybe we should control the distance between the players in a Coordinator actor
-    if (energyInfos.position.euclideanDistance(position) <= 2)
+    if (energyInfos.position.euclideanDistance(position) <= this.radiusPlayer())
       energyInfos.ref ! Consume
   }
 
@@ -163,6 +163,7 @@ class Player (var position: Vector2d, var weight: Int, var activeState: List[Sta
       case LetsHuntThem => Behavior.pursuit(target, position, velocity, MAX_VELOCITY)
       case RunAway => Behavior.evade(target, position, velocity, MAX_VELOCITY)
       case CollectEnergy => Behavior.seek(target.position, position, velocity, MAX_VELOCITY)
+      case Wander => Vector2d(0, 0) // case catched above. We put Wander only to remove a warning
     }
   }
 
@@ -199,4 +200,6 @@ class Player (var position: Vector2d, var weight: Int, var activeState: List[Sta
     energies
       .sortBy(e => e.position.euclideanDistance(position))
       .headOption
+
+  private def radiusPlayer(): Int = this.weight / 2
 }
