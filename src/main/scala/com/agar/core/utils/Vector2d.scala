@@ -1,6 +1,6 @@
 package com.agar.core.utils
 
-case class Vector2d(x: Double, y: Double) {
+case class Vector2d(var x: Double, var y: Double) {
 
   def this() = this(0.0, 0.0)
 

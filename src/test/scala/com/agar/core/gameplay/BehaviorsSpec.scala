@@ -39,5 +39,10 @@ class BehaviorsSpec() extends WordSpec with Matchers {
       val vel = new Vector2d(2, 2)
       Behavior.evade(target, pos, vel, MAX_VELOCITY) should be(new Vector2d(0.5678685169228461, -0.44885484889502947))
     }
+
+    "wander when he has nothing to do" in {
+      val vel = Vector2d(2, 2)
+      Behavior.wander(vel, 10, 10) should be(Vector2d(7.071067811865475, -2.9289321881345254))
+    }
   }
 }
