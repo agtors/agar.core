@@ -7,9 +7,8 @@ import akka.actor.{Actor, ActorRef, Props, Stash}
 import com.agar.core.arbritrator.ArbitratorProtocol.AOISet
 import com.agar.core.context.AgarSystem
 import com.agar.core.gameplay.energy.Energy
-import com.agar.core.gameplay.player.Player.Init
 import com.agar.core.gameplay.player.{AreaOfInterest, Player}
-import com.agar.core.utils.{Point2d, Vector2d}
+import com.agar.core.utils.Vector2d
 
 
 // TODO -- move these definitions
@@ -65,27 +64,25 @@ class Region(arbitrator: ActorRef, logger: ActorRef)(width: Int, height: Int)(im
 
     this.players = (0 until nbOfPlayer)
       .map { n =>
-        val player = freshPlayer(n)
-        val (xStart, yStart) = (r.nextInt(width), r.nextInt(height))
-        player ! Init(Point2d(xStart, yStart))
-        player -> PlayerState(Vector2d(xStart, yStart), WEIGHT_AT_START, DEFAULT_VELOCITY)
+        val position = Vector2d(r.nextInt(width), r.nextInt(height))
+        val player = createNewPlayer(position)
+        player -> PlayerState(position, WEIGHT_AT_START, DEFAULT_VELOCITY)
       }.toMap
 
     this.energies = (0 until nbOfStartingEnergy)
       .map { _ =>
-        val id = UUID.randomUUID()
         val position = Vector2d(r.nextInt(width), r.nextInt(height))
         val powerOfTheEnergy = 1 + r.nextInt(MAX_ENERGY_VALUE)
-        val energy = freshEnergy(id, powerOfTheEnergy)
+        val energy = createNewEnergy(powerOfTheEnergy)
         energy -> EnergyState(position, powerOfTheEnergy)
       }.toMap
   }
 
-  private def freshPlayer(n: Int): ActorRef = {
-    context.actorOf(Player.props(n), name = s"player-$n")
+  private def createNewPlayer(position: Vector2d): ActorRef = {
+    context.actorOf(Player.props(position, WEIGHT_AT_START)(self))
   }
 
-  private def freshEnergy(id: UUID, valueOfEnergy: Int): ActorRef = {
-    context.actorOf(Energy.props(valueOfEnergy), name = s"energy-$id")
+  private def createNewEnergy(valueOfEnergy: Int): ActorRef = {
+    context.actorOf(Energy.props(valueOfEnergy))
   }
 }
