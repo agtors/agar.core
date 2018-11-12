@@ -12,8 +12,6 @@ import com.typesafe.config.ConfigFactory
 
 object Agar extends App {
 
-  implicit val context: AgarSystem = DefaultAgarSystem
-
   val nbPlayer = args(0).toInt
   val nbEnergy = args(1).toInt
   val remotePort = args(2).toInt
@@ -21,17 +19,14 @@ object Agar extends App {
   val seedConfig = ConfigFactory.load("seed")
 
   implicit val system: ActorSystem = ActorSystem("agar", seedConfig)
+  implicit val context: AgarSystem = DefaultAgarSystem
 
   val journal = system.actorOf(Logger.props, "logger")
-
   val bridge = system.actorOf(Bridge.props(remotePort))
-
   val region = system.actorOf(Region.props(bridge, journal, 7680, 4320), "region")
-
-  region ! InitRegion(nbPlayer, nbEnergy)
-
   val arbitrator: ActorRef = system.actorOf(Arbitrator.props(bridge, region), "arbitrator")
 
+  region ! InitRegion(nbPlayer, nbEnergy)
   arbitrator ! StartGameTurn
 
 }

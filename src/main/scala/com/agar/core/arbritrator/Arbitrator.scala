@@ -1,7 +1,5 @@
 package com.agar.core.arbritrator
 
-import java.util.logging
-
 import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, PoisonPill, Props}
 import com.agar.core.arbritrator.Player._
 import com.agar.core.context.AgarSystem
@@ -38,7 +36,8 @@ object Player {
 
 object Arbitrator {
 
-  def props(bridge: ActorRef, region: ActorRef)(implicit agarContext: AgarSystem): Props = Props(new Arbitrator(bridge, region)(agarContext))
+  def props(bridge: ActorRef, region: ActorRef)(implicit agarContext: AgarSystem): Props =
+    Props(new Arbitrator(bridge, region)(agarContext))
 
 }
 
@@ -50,7 +49,8 @@ object ArbitratorProtocol {
 
 }
 
-class Arbitrator(bridge: ActorRef, region: ActorRef)(implicit agarSystem: AgarSystem) extends Actor with ActorLogging {
+class Arbitrator(bridge: ActorRef, region: ActorRef)(implicit agarSystem: AgarSystem)
+  extends Actor with ActorLogging {
 
   import com.agar.core.arbritrator.ArbitratorProtocol._
   import context.dispatcher

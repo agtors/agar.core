@@ -1,6 +1,6 @@
 package com.agar.core.arbitrator
 
-import akka.actor.{Actor, ActorSystem, Props}
+import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.testkit.{TestKit, TestProbe}
 import com.agar.core.arbritrator.Arbitrator
 import com.agar.core.arbritrator.ArbitratorProtocol.AOISet
@@ -35,7 +35,7 @@ class ArbitratorSpec(_system: ActorSystem)
       implicit val agarSystem: AgarSystem = () => 1 second
 
       val testProbe = TestProbe()
-      val arbitrator = system.actorOf(Arbitrator.props(testProbe.ref))
+      val arbitrator = system.actorOf(Arbitrator.props(ActorRef.noSender, testProbe.ref))
 
       arbitrator ! StartGameTurn
 
@@ -48,7 +48,7 @@ class ArbitratorSpec(_system: ActorSystem)
       implicit val agarSystem: AgarSystem = () => 1 second
 
       val testProbe = TestProbe()
-      val arbitrator = system.actorOf(Arbitrator.props(testProbe.ref))
+      val arbitrator = system.actorOf(Arbitrator.props(ActorRef.noSender, testProbe.ref))
       val player = system.actorOf(FakePlayer.props())
 
       arbitrator ! StartGameTurn
@@ -65,7 +65,7 @@ class ArbitratorSpec(_system: ActorSystem)
       implicit val agarSystem: AgarSystem = () => 1 second
 
       val testProbe = TestProbe()
-      val arbitrator = system.actorOf(Arbitrator.props(testProbe.ref))
+      val arbitrator = system.actorOf(Arbitrator.props(ActorRef.noSender, testProbe.ref))
       val player = system.actorOf(FakePlayer.props())
 
       arbitrator ! StartGameTurn
@@ -87,7 +87,7 @@ class ArbitratorSpec(_system: ActorSystem)
       implicit val agarSystem: AgarSystem = () => 100 millis
 
       val testProbe = TestProbe()
-      val arbitrator = system.actorOf(Arbitrator.props(testProbe.ref), "arbitrator3")
+      val arbitrator = system.actorOf(Arbitrator.props(ActorRef.noSender, testProbe.ref))
       val player = system.actorOf(FakePlayer.props(respond = false))
 
       arbitrator ! StartGameTurn
