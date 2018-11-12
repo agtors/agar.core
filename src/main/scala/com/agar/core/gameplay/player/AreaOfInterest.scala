@@ -1,9 +1,12 @@
+
 package com.agar.core.gameplay.player
 
 import akka.actor.ActorRef
 import com.agar.core.gameplay.Behavior.TargetEntity
 import com.agar.core.region.{EnergyState, PlayerState}
 import com.agar.core.utils.Vector2d
+import io.circe._
+import io.circe.generic.semiauto._
 
 // ref can be the ActorRef of the virtual or the real actor
 case class PlayerInfos(position: Vector2d, velocity: Vector2d, weight: Int, ref: ActorRef) {
@@ -13,6 +16,13 @@ case class PlayerInfos(position: Vector2d, velocity: Vector2d, weight: Int, ref:
 // ref can be the ActorRef of the virtual or the real actor
 case class EnergyInfos(position: Vector2d, value: Int, ref: ActorRef) {
   def intoTargetEntity(): TargetEntity = TargetEntity(this.position, Vector2d(0,0))
+}
+
+object deco {
+  implicit val actorRefEncoder: Encoder[ActorRef] = Encoder.encodeString.contramap[ActorRef](_.toString())
+  implicit val vector2dEncoder: Encoder[Vector2d] = deriveEncoder[Vector2d]
+  implicit val playerInfoEncoder: Encoder[PlayerInfos] = deriveEncoder[PlayerInfos]
+  implicit val energyInfoEncoder: Encoder[EnergyInfos] = deriveEncoder[EnergyInfos]
 }
 
 case class AOI(players: List[PlayerInfos], energies: List[EnergyInfos])
