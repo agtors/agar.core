@@ -22,8 +22,12 @@ import com.agar.core.arbritrator.Player._
 import com.agar.core.context.AgarSystem
 import com.agar.core.gameplay.player.AOI
 import com.agar.core.gameplay.player.Player.Tick
+<<<<<<< HEAD
 import com.agar.core.region.Region.{Destroy, GetEntitiesAOISet}
 >>>>>>> Review and simplify protocol Region <-> Arbitrator <-> Player
+=======
+import com.agar.core.region.Region.{Destroy, GetEntitiesAOISet, Move}
+>>>>>>> Fix message sent to the region when a plauyer has moved + Type in the playerspec
 import com.agar.core.utils.Vector2d
 
 import scala.language.postfixOps
@@ -124,14 +128,19 @@ class Arbitrator(bridge: ActorRef, region: ActorRef)(implicit agarSystem: AgarSy
 
   def inProgressGameTurn(players: PlayersStatus): Receive = {
 <<<<<<< HEAD
+<<<<<<< HEAD
     case MovePlayer(position, weight) =>
 =======
     case event@MovePlayer(_) =>
 >>>>>>> Review and simplify protocol Region <-> Arbitrator <-> Player
+=======
+    case MovePlayer(position) =>
+>>>>>>> Fix message sent to the region when a plauyer has moved + Type in the playerspec
 
       val newPlayers = players.get(sender).fold {
         players
       } { _ =>
+<<<<<<< HEAD
 <<<<<<< HEAD
         region ! Move(sender, position, weight)
         players + (sender -> Ended)
@@ -142,6 +151,9 @@ class Arbitrator(bridge: ActorRef, region: ActorRef)(implicit agarSystem: AgarSy
         players + (player -> Ended)
 >>>>>>> Add first definitions and bridge actor for clustering
 =======
+=======
+        region ! Move(sender, position)
+>>>>>>> Fix message sent to the region when a plauyer has moved + Type in the playerspec
         players + (sender -> Ended)
 >>>>>>> Review and simplify protocol Region <-> Arbitrator <-> Player
       }
