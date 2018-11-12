@@ -46,12 +46,19 @@ object Protocol {
   final case class Initialized(players: Map[ActorRef, PlayerState], energies: Map[ActorRef, EnergyState])
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   case class Move(player: ActorRef, position: Vector2d, weight: Int)
 
   case class Killed(player: ActorRef)
 
   case class Destroy(player: ActorRef)
 =======
+=======
+  case class Move(player: ActorRef, position: Vector2d)
+
+  case class Destroy(player: ActorRef)
+
+>>>>>>> Review and simplify protocol Region <-> Arbitrator <-> Player
   def props(bridge: ActorRef, logger: ActorRef, width: Int, height: Int)(implicit agarSystem: AgarSystem): Props = Props(new Region(bridge, logger)(width, height)(agarSystem))
 }
 
@@ -114,7 +121,7 @@ class Region(journal: ActorRef)(width: Int, height: Int) extends Actor with Stas
 =======
       sender ! AOISet(AreaOfInterest.getPlayersAOISet(this.players, this.energies))
 
-    case e : FromBridge =>
+    case e: FromBridge =>
       log.info(s"RECV $e")
 
 >>>>>>> Add first definitions and bridge actor for clustering

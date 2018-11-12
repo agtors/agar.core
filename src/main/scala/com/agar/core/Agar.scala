@@ -4,6 +4,7 @@ package com.agar.core
 import akka.actor.{ActorRef, ActorSystem}
 import com.agar.core.arbritrator.Arbitrator
 <<<<<<< HEAD
+<<<<<<< HEAD
 import com.agar.core.arbritrator.Protocol.StartGameTurn
 import com.agar.core.context.AgarSystem
 import com.agar.core.logger.Journal
@@ -13,6 +14,9 @@ import com.agar.core.region.Region
 import scala.concurrent.duration._
 =======
 import com.agar.core.arbritrator.Player.StartGameTurn
+=======
+import com.agar.core.arbritrator.Arbitrator.StartGameTurn
+>>>>>>> Review and simplify protocol Region <-> Arbitrator <-> Player
 import com.agar.core.bridge.Bridge
 import com.agar.core.context.{AgarSystem, DefaultAgarSystem}
 import com.agar.core.logger.Logger

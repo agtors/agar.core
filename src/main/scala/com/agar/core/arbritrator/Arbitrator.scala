@@ -9,12 +9,21 @@ import java.util.logging
 =======
 >>>>>>> Review test and change arguments according to the new protocol
 import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, PoisonPill, Props}
+<<<<<<< HEAD
 >>>>>>> Add first definitions and bridge actor for clustering
 import com.agar.core.arbritrator.Player._
 import com.agar.core.context.AgarSystem
 import com.agar.core.gameplay.player.AOI
 import com.agar.core.gameplay.player.Player.{KilledPlayer, Tick}
 import com.agar.core.region.Protocol.{GetEntitiesAOISet, Killed, Move}
+=======
+import com.agar.core.arbritrator.Arbitrator.{MovePlayer, StartGameTurn}
+import com.agar.core.arbritrator.Player._
+import com.agar.core.context.AgarSystem
+import com.agar.core.gameplay.player.AOI
+import com.agar.core.gameplay.player.Player.Tick
+import com.agar.core.region.Region.{Destroy, GetEntitiesAOISet}
+>>>>>>> Review and simplify protocol Region <-> Arbitrator <-> Player
 import com.agar.core.utils.Vector2d
 
 import scala.language.postfixOps
@@ -46,6 +55,10 @@ object Arbitrator {
   def props(bridge: ActorRef, region: ActorRef)(implicit agarContext: AgarSystem): Props =
     Props(new Arbitrator(bridge, region)(agarContext))
 >>>>>>> Review test and change arguments according to the new protocol
+
+  case object StartGameTurn
+
+  case class MovePlayer(position: Vector2d)
 
 }
 
@@ -110,7 +123,11 @@ class Arbitrator(bridge: ActorRef, region: ActorRef)(implicit agarSystem: AgarSy
   //
 
   def inProgressGameTurn(players: PlayersStatus): Receive = {
+<<<<<<< HEAD
     case MovePlayer(position, weight) =>
+=======
+    case event@MovePlayer(_) =>
+>>>>>>> Review and simplify protocol Region <-> Arbitrator <-> Player
 
       val newPlayers = players.get(sender).fold {
         players
@@ -120,9 +137,13 @@ class Arbitrator(bridge: ActorRef, region: ActorRef)(implicit agarSystem: AgarSy
         players + (sender -> Ended)
 =======
         region ! event
+<<<<<<< HEAD
         bridge ! event
         players + (player -> Ended)
 >>>>>>> Add first definitions and bridge actor for clustering
+=======
+        players + (sender -> Ended)
+>>>>>>> Review and simplify protocol Region <-> Arbitrator <-> Player
       }
 
       context become inProgressGameTurn(newPlayers)
@@ -132,7 +153,12 @@ class Arbitrator(bridge: ActorRef, region: ActorRef)(implicit agarSystem: AgarSy
 
     case TimeOutTurn =>
       runningPlayers(players).foreach { case (player, _) =>
+<<<<<<< HEAD
         region ! Killed(player)
+=======
+        player ! PoisonPill
+        region ! Destroy(player)
+>>>>>>> Review and simplify protocol Region <-> Arbitrator <-> Player
       }
 
       context become waitingForNewGameTurn
