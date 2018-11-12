@@ -1,34 +1,25 @@
 package com.agar.core.arbritrator
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, PoisonPill, Props}
+import com.agar.core.arbritrator.Arbitrator.{MovePlayer, StartGameTurn}
 import com.agar.core.arbritrator.Player._
 import com.agar.core.context.AgarSystem
 import com.agar.core.gameplay.player.AOI
-import com.agar.core.region.Region.GetEntitiesAOISet
+import com.agar.core.gameplay.player.Player.Tick
+import com.agar.core.region.Region.{Destroy, GetEntitiesAOISet}
+import com.agar.core.utils.Vector2d
 
 import scala.language.postfixOps
 
 // TEMPORARY DEFINITIONS -----------------------------------------------------------------------------------------------
 
 object Player {
-  type Position = Any
-
-  case object StartGameTurn
-
-  case class Tick(area: AOI)
-
-  case class MovePlayer(player: ActorRef, position: Position)
-
-  case class DestroyPlayer(player: ActorRef)
-
-  // -------------------------------------------------------------------------------------------------------------------
 
   sealed trait Status
 
   case object Ended extends Status
 
   case object Running extends Status
-
 
 }
 
@@ -38,6 +29,10 @@ object Arbitrator {
 
   def props(bridge: ActorRef, region: ActorRef)(implicit agarContext: AgarSystem): Props =
     Props(new Arbitrator(bridge, region)(agarContext))
+
+  case object StartGameTurn
+
+  case class MovePlayer(position: Vector2d)
 
 }
 
@@ -96,14 +91,13 @@ class Arbitrator(bridge: ActorRef, region: ActorRef)(implicit agarSystem: AgarSy
   //
 
   def inProgressGameTurn(players: PlayersStatus): Receive = {
-    case event@MovePlayer(player, _) =>
+    case event@MovePlayer(_) =>
 
-      val newPlayers = players.get(player).fold {
+      val newPlayers = players.get(sender).fold {
         players
       } { _ =>
         region ! event
-        bridge ! event
-        players + (player -> Ended)
+        players + (sender -> Ended)
       }
 
       context become inProgressGameTurn(newPlayers)
@@ -111,7 +105,7 @@ class Arbitrator(bridge: ActorRef, region: ActorRef)(implicit agarSystem: AgarSy
     case TimeOutTurn =>
       runningPlayers(players).foreach { case (player, _) =>
         player ! PoisonPill
-        region ! DestroyPlayer(player)
+        region ! Destroy(player)
       }
 
       context become waitingForNewGameTurn

@@ -28,6 +28,10 @@ object Region {
 
   final case class Initialized(players: Map[ActorRef, PlayerState], energies: Map[ActorRef, EnergyState])
 
+  case class Move(player: ActorRef, position: Vector2d)
+
+  case class Destroy(player: ActorRef)
+
   def props(bridge: ActorRef, logger: ActorRef, width: Int, height: Int)(implicit agarSystem: AgarSystem): Props = Props(new Region(bridge, logger)(width, height)(agarSystem))
 }
 
@@ -51,7 +55,7 @@ class Region(bridge: ActorRef, logger: ActorRef)(width: Int, height: Int)(implic
     case GetEntitiesAOISet =>
       sender ! AOISet(AreaOfInterest.getPlayersAOISet(this.players, this.energies))
 
-    case e : FromBridge =>
+    case e: FromBridge =>
       log.info(s"RECV $e")
 
   }

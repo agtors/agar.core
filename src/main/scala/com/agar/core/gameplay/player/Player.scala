@@ -1,7 +1,7 @@
 package com.agar.core.gameplay.player
 
 import akka.actor.{Actor, ActorRef, Props}
-import com.agar.core.arbritrator.Player.MovePlayer
+import com.agar.core.arbritrator.Arbitrator.MovePlayer
 import com.agar.core.gameplay.Behavior
 import com.agar.core.gameplay.Behavior.TargetEntity
 import com.agar.core.gameplay.energy.Energy.{Consume, Consumed}
@@ -37,7 +37,7 @@ class Player (var position: Vector2d, var weight: Int, var activeState: List[Sta
   override def receive(): Receive = {
     case Tick(areaOfInterest) =>
       update(areaOfInterest)
-      arbitrator ! MovePlayer(self, Vector2d(position.x, position.y))
+      arbitrator ! MovePlayer(Vector2d(position.x, position.y))
     case Consumed(v) =>
       this.weight += v
       //TODO send message to region

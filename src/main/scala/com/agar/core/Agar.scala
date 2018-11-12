@@ -2,7 +2,7 @@ package com.agar.core
 
 import akka.actor.{ActorRef, ActorSystem}
 import com.agar.core.arbritrator.Arbitrator
-import com.agar.core.arbritrator.Player.StartGameTurn
+import com.agar.core.arbritrator.Arbitrator.StartGameTurn
 import com.agar.core.bridge.Bridge
 import com.agar.core.context.{AgarSystem, DefaultAgarSystem}
 import com.agar.core.logger.Logger
