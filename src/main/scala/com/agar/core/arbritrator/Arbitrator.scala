@@ -6,7 +6,7 @@ import com.agar.core.arbritrator.Player._
 import com.agar.core.context.AgarSystem
 import com.agar.core.gameplay.player.AOI
 import com.agar.core.gameplay.player.Player.Tick
-import com.agar.core.region.Region.{Destroy, GetEntitiesAOISet}
+import com.agar.core.region.Region.{Destroy, GetEntitiesAOISet, Move}
 import com.agar.core.utils.Vector2d
 
 import scala.language.postfixOps
@@ -91,12 +91,12 @@ class Arbitrator(bridge: ActorRef, region: ActorRef)(implicit agarSystem: AgarSy
   //
 
   def inProgressGameTurn(players: PlayersStatus): Receive = {
-    case event@MovePlayer(_) =>
+    case MovePlayer(position) =>
 
       val newPlayers = players.get(sender).fold {
         players
       } { _ =>
-        region ! event
+        region ! Move(sender, position)
         players + (sender -> Ended)
       }
 
