@@ -3,8 +3,9 @@ package com.agar.core.region
 
 import java.util.UUID
 
-import akka.actor.{Actor, ActorRef, Props, Stash}
+import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import com.agar.core.arbritrator.ArbitratorProtocol.AOISet
+import com.agar.core.bridge.Bridge.FromBridge
 import com.agar.core.context.AgarSystem
 import com.agar.core.gameplay.energy.Energy
 import com.agar.core.gameplay.player.{AreaOfInterest, Player}
@@ -27,10 +28,10 @@ object Region {
 
   final case class Initialized(players: Map[ActorRef, PlayerState], energies: Map[ActorRef, EnergyState])
 
-  def props(arbitrator: ActorRef, logger: ActorRef, width: Int, height: Int)(implicit agarSystem: AgarSystem): Props = Props(new Region(arbitrator, logger)(width, height)(agarSystem))
+  def props(bridge: ActorRef, logger: ActorRef, width: Int, height: Int)(implicit agarSystem: AgarSystem): Props = Props(new Region(bridge, logger)(width, height)(agarSystem))
 }
 
-class Region(arbitrator: ActorRef, logger: ActorRef)(width: Int, height: Int)(implicit agarSystem: AgarSystem) extends Actor with Stash {
+class Region(bridge: ActorRef, logger: ActorRef)(width: Int, height: Int)(implicit agarSystem: AgarSystem) extends Actor with Stash with ActorLogging {
 
   import Region._
 
@@ -41,13 +42,18 @@ class Region(arbitrator: ActorRef, logger: ActorRef)(width: Int, height: Int)(im
   def WEIGHT_AT_START = 1
 
 
-  def id = UUID.randomUUID()
+  def id: UUID = UUID.randomUUID()
 
   var players: Map[ActorRef, PlayerState] = Map()
   var energies: Map[ActorRef, EnergyState] = Map()
 
   def initialized: Receive = {
-    case GetEntitiesAOISet => sender ! AOISet(AreaOfInterest.getPlayersAOISet(this.players, this.energies))
+    case GetEntitiesAOISet =>
+      sender ! AOISet(AreaOfInterest.getPlayersAOISet(this.players, this.energies))
+
+    case e : FromBridge =>
+      log.info(s"RECV $e")
+
   }
 
   def receive: Receive = {
@@ -59,7 +65,7 @@ class Region(arbitrator: ActorRef, logger: ActorRef)(width: Int, height: Int)(im
     case _ => stash()
   }
 
-  def initializeEntities(nbOfPlayer: Int, nbOfStartingEnergy: Int) = {
+  def initializeEntities(nbOfPlayer: Int, nbOfStartingEnergy: Int): Unit = {
     val r = new scala.util.Random
 
     this.players = (0 until nbOfPlayer)

@@ -1,24 +1,37 @@
 package com.agar.core
 
 import akka.actor.{ActorRef, ActorSystem}
-import com.agar.core.context.{AgarSystem, DefaultAgarSystem}
 import com.agar.core.arbritrator.Arbitrator
+import com.agar.core.arbritrator.Player.StartGameTurn
+import com.agar.core.bridge.Bridge
+import com.agar.core.context.{AgarSystem, DefaultAgarSystem}
 import com.agar.core.logger.Logger
 import com.agar.core.region.Region
-
-//#main-class
+import com.agar.core.region.Region.InitRegion
+import com.typesafe.config.ConfigFactory
 
 object Agar extends App {
 
   implicit val context: AgarSystem = DefaultAgarSystem
 
-  val system: ActorSystem = ActorSystem("Agar")
-  val logger: ActorRef = system.actorOf(Logger.props, "logger")
-  val arbitrator: ActorRef = system.actorOf(Arbitrator.props(logger),"arbitrator")
+  val nbPlayer = args(0).toInt
+  val nbEnergy = args(1).toInt
+  val remotePort = args(2).toInt
 
-  // A region has a size of 4 screen 1920x1080
-  val region = system.actorOf(Region.props(arbitrator, logger, 7680, 4320), "region")
+  val seedConfig = ConfigFactory.load("seed")
+
+  implicit val system: ActorSystem = ActorSystem("agar", seedConfig)
+
+  val journal = system.actorOf(Logger.props, "logger")
+
+  val bridge = system.actorOf(Bridge.props(remotePort))
+
+  val region = system.actorOf(Region.props(bridge, journal, 7680, 4320), "region")
+
+  region ! InitRegion(nbPlayer, nbEnergy)
+
+  val arbitrator: ActorRef = system.actorOf(Arbitrator.props(bridge, region), "arbitrator")
+
+  arbitrator ! StartGameTurn
 
 }
-
-//#main-class

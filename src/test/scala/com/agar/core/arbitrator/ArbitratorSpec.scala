@@ -29,6 +29,7 @@ class ArbitratorSpec(_system: ActorSystem)
   }
 
   "An Arbitrator Actor" should {
+
     "ask for AOISet when game starts" in {
 
       implicit val agarSystem: AgarSystem = () => 1 second
