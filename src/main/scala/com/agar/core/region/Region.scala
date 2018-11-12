@@ -1,7 +1,17 @@
 package com.agar.core.region
 
+<<<<<<< HEAD
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import com.agar.core.arbritrator.Protocol.AOISet
+=======
+
+import java.util.UUID
+
+import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
+import com.agar.core.arbritrator.ArbitratorProtocol.AOISet
+import com.agar.core.bridge.Bridge.FromBridge
+import com.agar.core.context.AgarSystem
+>>>>>>> Add first definitions and bridge actor for clustering
 import com.agar.core.gameplay.energy.Energy
 import com.agar.core.gameplay.player.{AreaOfInterest, Player}
 import com.agar.core.logger.Journal.WorldState
@@ -35,11 +45,18 @@ object Protocol {
 
   final case class Initialized(players: Map[ActorRef, PlayerState], energies: Map[ActorRef, EnergyState])
 
+<<<<<<< HEAD
   case class Move(player: ActorRef, position: Vector2d, weight: Int)
 
   case class Killed(player: ActorRef)
 
   case class Destroy(player: ActorRef)
+=======
+  def props(bridge: ActorRef, logger: ActorRef, width: Int, height: Int)(implicit agarSystem: AgarSystem): Props = Props(new Region(bridge, logger)(width, height)(agarSystem))
+}
+
+class Region(bridge: ActorRef, logger: ActorRef)(width: Int, height: Int)(implicit agarSystem: AgarSystem) extends Actor with Stash with ActorLogging {
+>>>>>>> Add first definitions and bridge actor for clustering
 
 }
 
@@ -51,13 +68,19 @@ trait Constants {
   def WEIGHT_AT_START = 1
 }
 
+<<<<<<< HEAD
 class Region(journal: ActorRef)(width: Int, height: Int) extends Actor with Stash with ActorLogging with Constants {
+=======
+
+  def id: UUID = UUID.randomUUID()
+>>>>>>> Add first definitions and bridge actor for clustering
 
   var players: Map[ActorRef, PlayerState] = Map()
   var energies: Map[ActorRef, EnergyState] = Map()
 
   def initialized: Receive = {
     case GetEntitiesAOISet =>
+<<<<<<< HEAD
       journal ! WorldState(players, energies)
       sender ! AOISet(AreaOfInterest.getPlayersAOISet(this.players, this.energies))
 
@@ -88,6 +111,13 @@ class Region(journal: ActorRef)(width: Int, height: Int) extends Actor with Stas
       players = players.filterKeys {
         energy != _
       }
+=======
+      sender ! AOISet(AreaOfInterest.getPlayersAOISet(this.players, this.energies))
+
+    case e : FromBridge =>
+      log.info(s"RECV $e")
+
+>>>>>>> Add first definitions and bridge actor for clustering
   }
 
   def receive: Receive = {

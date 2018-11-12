@@ -1,6 +1,12 @@
 package com.agar.core.arbritrator
 
+<<<<<<< HEAD
 import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, Props}
+=======
+import java.util.logging
+
+import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, PoisonPill, Props}
+>>>>>>> Add first definitions and bridge actor for clustering
 import com.agar.core.arbritrator.Player._
 import com.agar.core.context.AgarSystem
 import com.agar.core.gameplay.player.AOI
@@ -26,8 +32,12 @@ object Player {
 
 object Arbitrator {
 
+<<<<<<< HEAD
   def props(region: ActorRef)(implicit agarContext: AgarSystem): Props =
     Props(new Arbitrator(region)(agarContext))
+=======
+  def props(bridge: ActorRef, region: ActorRef)(implicit agarContext: AgarSystem): Props = Props(new Arbitrator(bridge, region)(agarContext))
+>>>>>>> Add first definitions and bridge actor for clustering
 
 }
 
@@ -45,7 +55,7 @@ object Protocol {
 
 }
 
-class Arbitrator(region: ActorRef)(implicit agarSystem: AgarSystem) extends Actor with ActorLogging {
+class Arbitrator(bridge: ActorRef, region: ActorRef)(implicit agarSystem: AgarSystem) extends Actor with ActorLogging {
 
   import com.agar.core.arbritrator.Protocol._
   import context.dispatcher
@@ -96,8 +106,14 @@ class Arbitrator(region: ActorRef)(implicit agarSystem: AgarSystem) extends Acto
       val newPlayers = players.get(sender).fold {
         players
       } { _ =>
+<<<<<<< HEAD
         region ! Move(sender, position, weight)
         players + (sender -> Ended)
+=======
+        region ! event
+        bridge ! event
+        players + (player -> Ended)
+>>>>>>> Add first definitions and bridge actor for clustering
       }
 
       context become inProgressGameTurn(newPlayers)
