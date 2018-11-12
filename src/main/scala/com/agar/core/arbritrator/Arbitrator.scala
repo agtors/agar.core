@@ -1,10 +1,13 @@
 package com.agar.core.arbritrator
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, Props}
 =======
 import java.util.logging
 
+=======
+>>>>>>> Review test and change arguments according to the new protocol
 import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, PoisonPill, Props}
 >>>>>>> Add first definitions and bridge actor for clustering
 import com.agar.core.arbritrator.Player._
@@ -33,11 +36,16 @@ object Player {
 object Arbitrator {
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   def props(region: ActorRef)(implicit agarContext: AgarSystem): Props =
     Props(new Arbitrator(region)(agarContext))
 =======
   def props(bridge: ActorRef, region: ActorRef)(implicit agarContext: AgarSystem): Props = Props(new Arbitrator(bridge, region)(agarContext))
 >>>>>>> Add first definitions and bridge actor for clustering
+=======
+  def props(bridge: ActorRef, region: ActorRef)(implicit agarContext: AgarSystem): Props =
+    Props(new Arbitrator(bridge, region)(agarContext))
+>>>>>>> Review test and change arguments according to the new protocol
 
 }
 
@@ -55,7 +63,8 @@ object Protocol {
 
 }
 
-class Arbitrator(bridge: ActorRef, region: ActorRef)(implicit agarSystem: AgarSystem) extends Actor with ActorLogging {
+class Arbitrator(bridge: ActorRef, region: ActorRef)(implicit agarSystem: AgarSystem)
+  extends Actor with ActorLogging {
 
   import com.agar.core.arbritrator.Protocol._
   import context.dispatcher
