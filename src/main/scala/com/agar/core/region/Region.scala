@@ -7,6 +7,7 @@ import akka.actor.{Actor, ActorRef, Props, Stash}
 import com.agar.core.arbritrator.ArbitratorProtocol.AOISet
 import com.agar.core.gameplay.energy.Energy
 import com.agar.core.gameplay.player.{AreaOfInterest, Player}
+import com.agar.core.logger.Journal.WorldState
 import com.agar.core.utils.Vector2d
 
 
@@ -47,6 +48,7 @@ class Region(journal: ActorRef)(width: Int, height: Int) extends Actor with Stas
 
   def initialized: Receive = {
     case GetEntitiesAOISet =>
+      journal ! WorldState(players, energies)
       sender ! AOISet(AreaOfInterest.getPlayersAOISet(this.players, this.energies))
   }
 
