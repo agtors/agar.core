@@ -4,6 +4,7 @@ import akka.actor.{Actor, Props}
 import com.agar.core.arbritrator.Protocol.MovePlayer
 import com.agar.core.gameplay.Behavior
 import com.agar.core.gameplay.Behavior.TargetEntity
+import com.agar.core.gameplay.energy.Energy.TryConsume
 import com.agar.core.gameplay.player.Player.{CollectEnergy, State}
 import com.agar.core.utils.Vector2d
 
@@ -26,9 +27,9 @@ object Player {
 
   case class Tick(aoi: AOI)
 
-  case object Eat
+  case object TryKill
 
-  case class EatSuccess(weight: Int)
+  case object KilledPlayer
 
 }
 
@@ -42,10 +43,28 @@ class Player(var position: Vector2d, var weight: Int, var activeState: List[Stat
 
   override def receive(): Receive = {
     case Tick(areaOfInterest) =>
-      update(areaOfInterest)
-      sender ! MovePlayer(Vector2d(position.x, position.y))
+      val energies = energiesToConsume(areaOfInterest.energies)
+      if (energies.nonEmpty) {
+        energies.head.ref ! TryConsume
+        sender ! MovePlayer(position, weight)
+      } else {
+        val players = playersToKill(areaOfInterest.players)
+        if (players.nonEmpty) {
+          players.head.ref ! TryKill
+          sender ! MovePlayer(position, weight)
+        } else {
+          update(areaOfInterest)
+          sender ! MovePlayer(Vector2d(position.x, position.y), weight)
+        }
+      }
 
+    case TryKill =>
+      context become killed
+  }
 
+  def killed: Receive = {
+    case Tick(_) =>
+      sender ! KilledPlayer
   }
 
   def update(areaOfInterest: AOI): Unit = {
@@ -184,5 +203,20 @@ class Player(var position: Vector2d, var weight: Int, var activeState: List[Stat
     energies
       .sortBy(e => e.position.euclideanDistance(position))
       .headOption
+
+  def playersToKill(active: List[PlayerInfos]): List[PlayerInfos] =
+    active.filter { player2 => canKillThePlayer(player2) }
+
+  def energiesToConsume(energies: List[EnergyInfos]): List[EnergyInfos] =
+    energies.filter { energy => canConsumeTheEnergy(energy) }
+
+  private def canKillThePlayer(player2: PlayerInfos): Boolean =
+    this.position.euclideanDistance(player2.position) <= this.radiusPlayer() && this.weight > player2.weight
+
+  private def canConsumeTheEnergy(energy: EnergyInfos): Boolean =
+    this.position.euclideanDistance(energy.position) <= this.radiusPlayer()
+
+  private def radiusPlayer(): Int =
+    this.weight / 2
 
 }

@@ -8,7 +8,7 @@ import com.agar.core.gameplay.energy.Energy
 import com.agar.core.gameplay.player.{AreaOfInterest, Player}
 import com.agar.core.logger.Journal.WorldState
 import com.agar.core.region.Protocol._
-import com.agar.core.region.State.{EnergyState, PlayerState, VirtualPlayerState}
+import com.agar.core.region.State.{EnergyState, PlayerState}
 import com.agar.core.utils.Vector2d
 
 object State {
@@ -37,7 +37,9 @@ object Protocol {
 
   final case class Initialized(players: Map[ActorRef, PlayerState], energies: Map[ActorRef, EnergyState])
 
-  case class Move(player: ActorRef, position: Vector2d)
+  case class Move(player: ActorRef, position: Vector2d, weight: Int)
+
+  case class Kill(player: ActorRef)
 
   case class Destroy(player: ActorRef)
 
@@ -53,32 +55,41 @@ trait Constants {
 
 class Region(journal: ActorRef)(width: Int, height: Int) extends Actor with Stash with ActorLogging with Constants {
 
-  var virtualPlayers: Map[ActorRef, VirtualPlayerState] = Map()
   var players: Map[ActorRef, PlayerState] = Map()
   var energies: Map[ActorRef, EnergyState] = Map()
 
   def initialized: Receive = {
     case GetEntitiesAOISet =>
-      this.solveConflicts()
-
       journal ! WorldState(players, energies)
       sender ! AOISet(AreaOfInterest.getPlayersAOISet(this.players, this.energies))
 
-    case Move(player, position) =>
+    case Move(player, position, weight) =>
       players = players.get(player).fold {
         players
       } { state =>
-        players + (player -> PlayerState(position, state.weight, state.velocity, state.virtual))
+        players + (player -> PlayerState(position, state.weight + weight, state.velocity, state.virtual))
       }
 
-      virtualPlayers = virtualPlayers.get(player).fold {
-        virtualPlayers
-      } { state =>
-        virtualPlayers + (player -> VirtualPlayerState(position, state.weight, state.velocity))
+    case Kill(player) =>
+      players.get(player).foreach { s =>
+        energies = energies + (createNewEnergy(s.weight) -> EnergyState(s.position, s.weight))
+        context.stop(player)
       }
 
-    case Destroy(player) =>
-      destroyPlayer(player)
+      // Perform destruction
+      players = players.filterKeys {
+        player != _
+      }
+
+    case Destroy(energy) =>
+      players.get(energy).foreach { _ =>
+        context.stop(energy)
+      }
+
+      // Perform destruction
+      players = players.filterKeys {
+        energy != _
+      }
   }
 
   def receive: Receive = {
@@ -109,35 +120,12 @@ class Region(journal: ActorRef)(width: Int, height: Int) extends Actor with Stas
       }.toMap
   }
 
-  private def solveConflicts(): Unit = {
-    val (newPlayers, newEnergies, eaten) = Conflicts.solve(players, energies)
-
-    this.players = newPlayers
-    this.energies = newEnergies
-
-    eaten.foreach {
-      context.stop
-    }
-  }
-
-  private def destroyPlayer(player: ActorRef): Unit = {
-    players.get(player).foreach { state =>
-      context.stop(player)
-    }
-
-    // Perform destruction
-    players = players.filterKeys {
-      player != _
-    }
-
-  }
-
   private def createNewPlayer(position: Vector2d, weight: Int): ActorRef = {
     context.actorOf(Player.props(position, weight), s"player-${UUID.randomUUID().toString}")
   }
 
   private def createNewEnergy(valueOfEnergy: Int): ActorRef = {
-    context.actorOf(Energy.props(valueOfEnergy))
+    context.actorOf(Energy.props(valueOfEnergy)(self))
   }
 
 }

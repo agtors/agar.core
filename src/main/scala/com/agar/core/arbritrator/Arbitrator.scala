@@ -4,8 +4,8 @@ import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, PoisonPill, Props
 import com.agar.core.arbritrator.Player._
 import com.agar.core.context.AgarSystem
 import com.agar.core.gameplay.player.AOI
-import com.agar.core.gameplay.player.Player.Tick
-import com.agar.core.region.Protocol.{Destroy, GetEntitiesAOISet, Move}
+import com.agar.core.gameplay.player.Player.{KilledPlayer, Tick}
+import com.agar.core.region.Protocol.{Destroy, GetEntitiesAOISet, Kill, Move}
 import com.agar.core.utils.Vector2d
 
 import scala.language.postfixOps
@@ -37,7 +37,7 @@ object Protocol {
 
   case object StartGameTurn
 
-  case class MovePlayer(position: Vector2d)
+  case class MovePlayer(position: Vector2d, weight: Int)
 
   case class AOISet(players: Map[ActorRef, AOI])
 
@@ -91,16 +91,19 @@ class Arbitrator(region: ActorRef)(implicit agarSystem: AgarSystem) extends Acto
   //
 
   def inProgressGameTurn(players: PlayersStatus): Receive = {
-    case MovePlayer(position) =>
+    case MovePlayer(position, weight) =>
 
       val newPlayers = players.get(sender).fold {
         players
       } { _ =>
-        region ! Move(sender, position)
+        region ! Move(sender, position, weight)
         players + (sender -> Ended)
       }
 
       context become inProgressGameTurn(newPlayers)
+
+    case KilledPlayer =>
+      region ! Kill(sender)
 
     case TimeOutTurn =>
       runningPlayers(players).foreach { case (player, _) =>

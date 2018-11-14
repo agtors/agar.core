@@ -56,7 +56,7 @@ class ArbitratorSpec(_system: ActorSystem)
       testProbe.expectMsg(500 millis, GetEntitiesAOISet)
       // Simulate region response
       arbitrator ! AOISet(Map(player -> AOI(List(), List())))
-      testProbe.expectMsg(500 millis, Move(player, Vector2d(1, 1)))
+      testProbe.expectMsg(500 millis, Move(player, Vector2d(1, 1), 1))
 
     }
 
@@ -73,12 +73,12 @@ class ArbitratorSpec(_system: ActorSystem)
       testProbe.expectMsg(500 millis, GetEntitiesAOISet)
       // Simulate region response
       arbitrator ! AOISet(Map(player -> AOI(List(), List())))
-      testProbe.expectMsg(500 millis, Move(player, Vector2d(1, 1)))
+      testProbe.expectMsg(500 millis, Move(player, Vector2d(1, 1), 1))
 
       testProbe.expectMsg(1500 millis, GetEntitiesAOISet)
       // Simulate region response
       arbitrator ! AOISet(Map(player -> AOI(List(), List())))
-      testProbe.expectMsg(500 millis, Move(player, Vector2d(2, 2)))
+      testProbe.expectMsg(500 millis, Move(player, Vector2d(2, 2), 1))
 
     }
 
@@ -114,7 +114,7 @@ class ArbitratorSpec(_system: ActorSystem)
       case Tick(_) =>
         if (respond) {
           position = Vector2d(position.x + 1, position.y + 1)
-          sender ! MovePlayer(position)
+          sender ! MovePlayer(position, 1)
         }
     }
 

@@ -4,8 +4,8 @@ import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.testkit.{ImplicitSender, TestKit, TestProbe}
 import com.agar.core.arbritrator.Protocol.MovePlayer
 import com.agar.core.context.AgarSystem
-import com.agar.core.gameplay.energy.Energy.Consume
-import com.agar.core.gameplay.player.Player.Tick
+import com.agar.core.gameplay.energy.Energy.TryConsume
+import com.agar.core.gameplay.player.Player.{Tick, TryKill}
 import com.agar.core.utils.Vector2d
 import org.scalatest.{Matchers, WordSpecLike}
 
@@ -30,7 +30,7 @@ class PlayerSpec(_system: ActorSystem)
 
       playerRef ! Tick(aoi)
       this.expectMsgPF() {
-        case MovePlayer(position) => position != playerPosition
+        case MovePlayer(position, _) => position != playerPosition
       }
     }
 
@@ -53,7 +53,7 @@ class PlayerSpec(_system: ActorSystem)
 
       playerRef ! Tick(aoi)
 
-      this.expectMsg(500 millis, MovePlayer(Vector2d(97.87867965644035, 97.87867965644035)))
+      this.expectMsg(500 millis, MovePlayer(Vector2d(97.87867965644035, 97.87867965644035), playerWeight))
     }
 
     "eat a player close to him and any Player is dangerous around him" in {
@@ -78,7 +78,8 @@ class PlayerSpec(_system: ActorSystem)
 
       playerRef ! Tick(aoi)
 
-      this.expectMsg(500 millis, MovePlayer(Vector2d(102.12132034355965, 102.12132034355965)))
+      testProbe.expectMsg(500 millis, TryKill)
+      this.expectMsg(500 millis, MovePlayer(Vector2d(100, 100), playerWeight))
     }
 
     "collect energy peacefully when nobody is around" in {
@@ -102,8 +103,8 @@ class PlayerSpec(_system: ActorSystem)
       )
 
       playerRef ! Tick(aoi)
-      testProbe.expectMsg(500 millis, MovePlayer(Vector2d(102.12132034355965, 102.12132034355965)))
-      testProbe.expectMsg(500 millis, Consume)
+      testProbe.expectMsg(500 millis, TryConsume)
+      this.expectMsg(500 millis, MovePlayer(Vector2d(100, 100), playerWeight))
     }
 
     "wander when he has just players with same weight around" in {
@@ -129,7 +130,7 @@ class PlayerSpec(_system: ActorSystem)
       playerRef ! Tick(aoi)
 
       this.expectMsgPF() {
-        case MovePlayer(position) => position != playerPosition
+        case MovePlayer(position, _) => position != playerPosition
       }
     }
   }
