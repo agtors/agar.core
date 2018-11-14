@@ -52,7 +52,7 @@ object Behavior {
   private def getFuturPositionAccordingTo(target: TargetEntity, position: Vector2d, maxVelocity: Short): Vector2d = {
     val distance = target.position - position
     val updatesNeeded = distance.magnitude() / maxVelocity
-    val tv = target.velocity  * updatesNeeded
+    val tv = target.velocity * updatesNeeded
     target.velocity + tv
   }
 }

@@ -1,14 +1,14 @@
 package com.agar.core.gameplay.energy
 
 import akka.actor.ActorSystem
-import akka.testkit.{ImplicitSender, TestKit}
-import com.agar.core.gameplay.energy.Energy.{Consume, Consumed}
+import akka.testkit.{ImplicitSender, TestKit, TestProbe}
+import com.agar.core.gameplay.energy.Energy.{Consumed, TryConsume}
+import com.agar.core.region.Protocol.Destroy
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
-//#test-classes
 class EnergySpec(_system: ActorSystem)
   extends TestKit(_system)
     with ImplicitSender
@@ -23,24 +23,26 @@ class EnergySpec(_system: ActorSystem)
   }
 
   "An Energy Actor" should {
-    "can be consumed" in {
+    "be consumed" in {
+      val region = TestProbe()
+      val energy = system.actorOf(Energy.props(10)(region.ref))
 
-      val energy = system.actorOf(Energy.props(10))
-
-      energy ! Consume
+      energy ! TryConsume
       this.expectMsg(500 millis, Consumed(10))
-
+      region.expectMsg(500 millis, Destroy(energy))
     }
 
-    "can be consumed only once" in {
+    "be consumed only once" in {
+      val region = TestProbe()
+      val energy = system.actorOf(Energy.props(10)(region.ref))
 
-      val energy = system.actorOf(Energy.props(10))
-
-      energy ! Consume
+      energy ! TryConsume
       this.expectMsg(500 millis, Consumed(10))
+      region.expectMsg(500 millis, Destroy(energy))
 
-      energy ! Consume
+      energy ! TryConsume
       this.expectNoMessage(500 millis)
+      region.expectNoMessage(500 millis)
 
     }
   }

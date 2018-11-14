@@ -7,10 +7,10 @@ case class Vector2d(var x: Double, var y: Double) {
   def this(p: Point2d) = this(p.x, p.y)
 
   /** Negates a vector. */
-  def unary_- = new Vector2d(-x, -y)
+  def unary_- = Vector2d(-x, -y)
 
   /** Returns the sum of two vectors. */
-  def add(v: Vector2d): Vector2d = new Vector2d(x + v.x, y + v.y)
+  def add(v: Vector2d): Vector2d = Vector2d(x + v.x, y + v.y)
 
   /** Returns the sum of two vectors. */
   def +(v: Vector2d): Vector2d = this.add(v)
@@ -22,7 +22,7 @@ case class Vector2d(var x: Double, var y: Double) {
   def -(v: Vector2d): Vector2d = this.subtract(v)
 
   /** Returns the scalar multiple of this vector by k. */
-  def multiply(k: Double): Vector2d = new Vector2d(k * x, k * y)
+  def multiply(k: Double): Vector2d = Vector2d(k * x, k * y)
 
   /** Returns the scalar multiple of this vector by 1/k. */
   def divide(k: Double): Vector2d = this.multiply(1.0 / k)

@@ -3,7 +3,7 @@ package com.agar.core.region
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.testkit.{TestKit, TestProbe}
 import com.agar.core.context.AgarSystem
-import com.agar.core.region.Region.{InitRegion, Initialized}
+import com.agar.core.region.Protocol.{InitRegion, Initialized}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.concurrent.duration._
@@ -30,7 +30,7 @@ class RegionTest(_system: ActorSystem)
       val testProbe = TestProbe()
       val tracer = system.actorOf(Props(new Tracer(testProbe.ref)))
 
-      val region = system.actorOf(Region.props(ActorRef.noSender, tracer, 7680, 4320), "region")
+      val region = system.actorOf(Region.props(tracer, 7680, 4320), "region")
 
       region ! InitRegion(2, 2)
 

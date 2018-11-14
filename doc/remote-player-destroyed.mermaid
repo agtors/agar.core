@@ -1,16 +1,16 @@
 sequenceDiagram
+    participant Journal
     participant Region1
-    participant Logger1
     participant Arbitre1
     participant Player
     participant Virtual
     participant Bridge
     participant Region2
 
+Region1  ->>  Journal:Set(P*AOI)
 Region1  ->>  Arbitre1:Set(P*AOI)
-Region1  ->>  Logger1:Set(P*AOI)
 Arbitre1 ->>  Player:Tick(AOI)
-Player   -->> Arbitre1:Moved(P*Position)
-Arbitre1 -->> Region1:Moved(P*Position)
-Region1  ->>  Bridge:DestroyVirtual(P*Position)
-Bridge   ->>  Region2:DestroyVirtual(P*Position)
+Player   -->> Arbitre1:MovedPlayer(Position*Weight)
+Arbitre1 -->> Region1:Moved(Player*Position*Weight)
+Region1  ->>  Bridge:Destroy(Player)
+Bridge   ->>  Region2:Destroy(Player)

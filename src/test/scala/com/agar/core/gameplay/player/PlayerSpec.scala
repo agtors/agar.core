@@ -1,18 +1,19 @@
 package com.agar.core.gameplay.player
 
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
-import akka.testkit.{TestKit, TestProbe}
-import com.agar.core.arbritrator.Player.MovePlayer
+import akka.testkit.{ImplicitSender, TestKit, TestProbe}
+import com.agar.core.arbritrator.Protocol.MovePlayer
 import com.agar.core.context.AgarSystem
-import com.agar.core.gameplay.energy.Energy.Consume
-import com.agar.core.gameplay.player.Player.{Eat, Tick}
+import com.agar.core.gameplay.energy.Energy.TryConsume
+import com.agar.core.gameplay.player.Player.{Tick, TryKill}
 import com.agar.core.utils.Vector2d
 import org.scalatest.{Matchers, WordSpecLike}
 
 import scala.concurrent.duration._
 
-class PlayerSpec (_system: ActorSystem)
+class PlayerSpec(_system: ActorSystem)
   extends TestKit(_system)
+    with ImplicitSender
     with WordSpecLike
     with Matchers {
 
@@ -22,42 +23,39 @@ class PlayerSpec (_system: ActorSystem)
     "wander when he has nothing around" in {
       implicit val agarSystem: AgarSystem = () => 1 second
 
-      val testProbe = TestProbe()
-      val tracer = system.actorOf(Props(new Tracer(testProbe.ref)))
-
+      val region = TestProbe()
       val playerPosition = Vector2d(100, 100)
-      val playerRef = system.actorOf(Props(new Player(playerPosition, 10)(tracer)))
+      val playerRef = system.actorOf(Player.props(playerPosition, 10)(region.ref))
 
       val aoi = AOI(List.empty, List.empty)
 
       playerRef ! Tick(aoi)
-      testProbe.expectMsgPF() {
-        case MovePlayer(ref, position) => playerRef == ref && position != playerPosition
+      this.expectMsgPF(500 millis) { case MovePlayer(position, weight) =>
+        position != playerPosition && weight == 10 && lastSender == playerRef
       }
     }
 
     "run when a dangerous player enter in the AOI" in {
       implicit val agarSystem: AgarSystem = () => 1 second
 
-      val testProbe = TestProbe()
-      val tracer = system.actorOf(Props(new Tracer(testProbe.ref)))
-
+      val region = TestProbe()
       val playerPosition = Vector2d(100, 100)
-      val playerWeigth = 10
-      val playerRef = system.actorOf(Props(new Player(playerPosition, playerWeigth)(tracer)))
+      val playerWeight = 10
+      val playerRef = system.actorOf(Player.props(playerPosition, playerWeight)(region.ref))
 
       val aoi = AOI(
         List(
-          PlayerInfos(Vector2d(playerPosition.x + 100, playerPosition.y + 100), Vector2d(2,2), 90, ActorRef.noSender), // Most closest dangerous player
-          PlayerInfos(Vector2d(playerPosition.x + 100, playerPosition.y + 100), Vector2d(2,2), 5, ActorRef.noSender), // should not pursuit this one
-          PlayerInfos(Vector2d(playerPosition.x + 200, playerPosition.y + 200), Vector2d(2,2), 10, ActorRef.noSender), // do not worry
-          PlayerInfos(Vector2d(playerPosition.x - 100, playerPosition.y - 150), Vector2d(2,2), 5, ActorRef.noSender), // Most weak player
+          PlayerInfos(Vector2d(playerPosition.x + 100, playerPosition.y + 100), Vector2d(2, 2), 90, ActorRef.noSender), // Most closest dangerous player
+          PlayerInfos(Vector2d(playerPosition.x + 100, playerPosition.y + 100), Vector2d(2, 2), 5, ActorRef.noSender), // should not pursuit this one
+          PlayerInfos(Vector2d(playerPosition.x + 200, playerPosition.y + 200), Vector2d(2, 2), 10, ActorRef.noSender), // do not worry
+          PlayerInfos(Vector2d(playerPosition.x - 100, playerPosition.y - 150), Vector2d(2, 2), 5, ActorRef.noSender), // Most weak player
         ),
         List(EnergyInfos(Vector2d(playerPosition.x + 50, playerPosition.y + 50), 10, ActorRef.noSender)) // do not worry
       )
 
       playerRef ! Tick(aoi)
-      testProbe.expectMsg(500 millis, MovePlayer(playerRef, Vector2d(97.87867965644035, 97.87867965644035)))
+
+      this.expectMsg(500 millis, MovePlayer(Vector2d(97.87867965644035, 97.87867965644035), playerWeight))
     }
 
     "eat a player close to him and any Player is dangerous around him" in {
@@ -66,34 +64,36 @@ class PlayerSpec (_system: ActorSystem)
       val testProbe = TestProbe()
       val tracer = system.actorOf(Props(new Tracer(testProbe.ref)))
 
+      val region = TestProbe()
       val playerPosition = Vector2d(100, 100)
-      val playerWeigth = 40
-      val playerRef = system.actorOf(Props(new Player(playerPosition, playerWeigth)(tracer)))
+      val playerWeight = 40
+      val playerRef = system.actorOf(Player.props(playerPosition, playerWeight)(region.ref))
 
       // Only weak players in the AOI
       val aoi = AOI(
         List(
-          PlayerInfos(Vector2d(playerPosition.x + 2, playerPosition.y + 2), Vector2d(2,2), playerWeigth / 2, tracer), // Most closest weakest player
-          PlayerInfos(Vector2d(playerPosition.x + 10, playerPosition.y + 10), Vector2d(2,2), playerWeigth, ActorRef.noSender), // do not worry they have the same weight
-          PlayerInfos(Vector2d(playerPosition.x - 3, playerPosition.y - 3), Vector2d(2,2), playerWeigth / 2, ActorRef.noSender), // weak player
+          PlayerInfos(Vector2d(playerPosition.x + 2, playerPosition.y + 2), Vector2d(2, 2), playerWeight / 2, tracer), // Most closest weakest player
+          PlayerInfos(Vector2d(playerPosition.x + 10, playerPosition.y + 10), Vector2d(2, 2), playerWeight, ActorRef.noSender), // do not worry they have the same weight
+          PlayerInfos(Vector2d(playerPosition.x - 3, playerPosition.y - 3), Vector2d(2, 2), playerWeight / 2, ActorRef.noSender), // weak player
         ),
         List(EnergyInfos(Vector2d(playerPosition.x + 50, playerPosition.y + 50), 10, ActorRef.noSender)) // do not worry
       )
 
       playerRef ! Tick(aoi)
-      testProbe.expectMsg(500 millis, Eat)
-      testProbe.expectMsg(500 millis, MovePlayer(playerRef, Vector2d(102.12132034355965, 102.12132034355965)))
+
+      testProbe.expectMsg(500 millis, TryKill)
+      this.expectMsg(500 millis, MovePlayer(Vector2d(100, 100), playerWeight))
     }
 
     "collect energy peacefully when nobody is around" in {
       implicit val agarSystem: AgarSystem = () => 1 second
 
       val testProbe = TestProbe()
-      val tracer = system.actorOf(Props(new Tracer(testProbe.ref)))
 
+      val region = TestProbe()
       val playerPosition = Vector2d(100, 100)
-      val playerWeigth = 10
-      val playerRef = system.actorOf(Props(new Player(playerPosition, playerWeigth)(tracer)))
+      val playerWeight = 10
+      val playerRef = system.actorOf(Player.props(playerPosition, playerWeight)(region.ref))
 
       val energyTracer = system.actorOf(Props(new Tracer(testProbe.ref)))
 
@@ -107,8 +107,8 @@ class PlayerSpec (_system: ActorSystem)
       )
 
       playerRef ! Tick(aoi)
-      testProbe.expectMsg(500 millis, Consume)
-      testProbe.expectMsg(500 millis, MovePlayer(playerRef, Vector2d(102.12132034355965, 102.12132034355965)))
+      testProbe.expectMsg(500 millis, TryConsume)
+      this.expectMsg(500 millis, MovePlayer(Vector2d(100, 100), playerWeight))
     }
 
     "wander when he has just players with same weight around" in {
@@ -117,23 +117,25 @@ class PlayerSpec (_system: ActorSystem)
       val testProbe = TestProbe()
       val tracer = system.actorOf(Props(new Tracer(testProbe.ref)))
 
+      val region = TestProbe()
       val playerPosition = Vector2d(100, 100)
-      val playerWeigth = 10
-      val playerRef = system.actorOf(Props(new Player(playerPosition, playerWeigth)(tracer)))
+      val playerWeight = 10
+      val playerRef = system.actorOf(Player.props(playerPosition, playerWeight)(region.ref))
 
       // Only players with the same weight in AOI
       val aoi = AOI(
         List(
-          PlayerInfos(Vector2d(playerPosition.x + 3, playerPosition.y - 2), Vector2d(2,2), playerWeigth, ActorRef.noSender),
-          PlayerInfos(Vector2d(playerPosition.x + 5, playerPosition.y + 10), Vector2d(2,2), playerWeigth, ActorRef.noSender),
-          PlayerInfos(Vector2d(playerPosition.x - 3, playerPosition.y - 3), Vector2d(2,2), playerWeigth, ActorRef.noSender),
+          PlayerInfos(Vector2d(playerPosition.x + 3, playerPosition.y - 2), Vector2d(2, 2), playerWeight, ActorRef.noSender),
+          PlayerInfos(Vector2d(playerPosition.x + 5, playerPosition.y + 10), Vector2d(2, 2), playerWeight, ActorRef.noSender),
+          PlayerInfos(Vector2d(playerPosition.x - 3, playerPosition.y - 3), Vector2d(2, 2), playerWeight, ActorRef.noSender),
         ),
         List.empty
       )
 
       playerRef ! Tick(aoi)
-      testProbe.expectMsgPF() {
-        case MovePlayer(ref, position) => playerRef == ref && position != playerPosition
+
+      this.expectMsgPF(500 millis) { case MovePlayer(position, weight) =>
+        position != playerPosition && weight == playerWeight && lastSender == playerRef
       }
     }
   }
@@ -144,4 +146,5 @@ class PlayerSpec (_system: ActorSystem)
         a ! e
     }
   }
+
 }

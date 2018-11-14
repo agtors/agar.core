@@ -1,0 +1,19 @@
+sequenceDiagram
+    participant Region
+    participant Arbitre
+    participant Player1
+    participant Player2
+
+Arbitre ->>  Region:GetEntitiesAOISet
+Region  ->>  Arbitre:Set(P*AOI)
+Arbitre ->>  Player1:Tick(AOI)
+Arbitre ->>  Player2:Tick(AOI)
+Player1 ->>  Player2:TryKill
+Player2 ->>  Region:Killed(Player2)
+Region  ->>  Player2:PoisonPill
+Region  ->>  Region:CreateEnergy(Player2)
+Player1 ->>  Arbitre:MovedPlayer(Position*Weight)
+Arbitre ->>  Region:Moved(Player1*Position*Weight)
+Arbitre ->>  Region:GetEntitiesAOISet
+Region  ->>  Arbitre:Set(P*AOI)
+Arbitre ->>  Player1:Tick(AOI)
