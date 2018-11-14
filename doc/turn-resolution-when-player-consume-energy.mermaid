@@ -1,0 +1,15 @@
+sequenceDiagram
+    participant Region
+    participant Arbitre
+    participant Player
+    participant Energy
+
+Arbitre ->>  Region:GetEntitiesAOISet
+Region  ->>  Arbitre:Set(P*AOI)
+Arbitre ->>  Player:Tick(AOI)
+Player ->>   Energy:TryConsume
+Player ->>   Arbitre:MovedPlayer(Position*Weight)
+Arbitre ->>  Region:Moved(Player*Position*Weight)
+Energy ->>   Player:Consumed(Energy)
+Energy ->>   Region:Destroy(Energy)
+Region  ->>  Energy:PoisonPill

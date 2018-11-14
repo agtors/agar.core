@@ -23,23 +23,25 @@ class PlayerSpec(_system: ActorSystem)
     "wander when he has nothing around" in {
       implicit val agarSystem: AgarSystem = () => 1 second
 
+      val region = TestProbe()
       val playerPosition = Vector2d(100, 100)
-      val playerRef = system.actorOf(Props(new Player(playerPosition, 10)))
+      val playerRef = system.actorOf(Player.props(playerPosition, 10)(region.ref))
 
       val aoi = AOI(List.empty, List.empty)
 
       playerRef ! Tick(aoi)
-      this.expectMsgPF() {
-        case MovePlayer(position, _) => position != playerPosition
+      this.expectMsgPF(500 millis) { case MovePlayer(position, weight) =>
+        position != playerPosition && weight == 10 && lastSender == playerRef
       }
     }
 
     "run when a dangerous player enter in the AOI" in {
       implicit val agarSystem: AgarSystem = () => 1 second
 
+      val region = TestProbe()
       val playerPosition = Vector2d(100, 100)
       val playerWeight = 10
-      val playerRef = system.actorOf(Props(new Player(playerPosition, playerWeight)))
+      val playerRef = system.actorOf(Player.props(playerPosition, playerWeight)(region.ref))
 
       val aoi = AOI(
         List(
@@ -62,9 +64,10 @@ class PlayerSpec(_system: ActorSystem)
       val testProbe = TestProbe()
       val tracer = system.actorOf(Props(new Tracer(testProbe.ref)))
 
+      val region = TestProbe()
       val playerPosition = Vector2d(100, 100)
       val playerWeight = 40
-      val playerRef = system.actorOf(Props(new Player(playerPosition, playerWeight)))
+      val playerRef = system.actorOf(Player.props(playerPosition, playerWeight)(region.ref))
 
       // Only weak players in the AOI
       val aoi = AOI(
@@ -87,9 +90,10 @@ class PlayerSpec(_system: ActorSystem)
 
       val testProbe = TestProbe()
 
+      val region = TestProbe()
       val playerPosition = Vector2d(100, 100)
       val playerWeight = 10
-      val playerRef = system.actorOf(Props(new Player(playerPosition, playerWeight)))
+      val playerRef = system.actorOf(Player.props(playerPosition, playerWeight)(region.ref))
 
       val energyTracer = system.actorOf(Props(new Tracer(testProbe.ref)))
 
@@ -113,9 +117,10 @@ class PlayerSpec(_system: ActorSystem)
       val testProbe = TestProbe()
       val tracer = system.actorOf(Props(new Tracer(testProbe.ref)))
 
+      val region = TestProbe()
       val playerPosition = Vector2d(100, 100)
       val playerWeight = 10
-      val playerRef = system.actorOf(Props(new Player(playerPosition, playerWeight)))
+      val playerRef = system.actorOf(Player.props(playerPosition, playerWeight)(region.ref))
 
       // Only players with the same weight in AOI
       val aoi = AOI(
@@ -129,8 +134,8 @@ class PlayerSpec(_system: ActorSystem)
 
       playerRef ! Tick(aoi)
 
-      this.expectMsgPF() {
-        case MovePlayer(position, _) => position != playerPosition
+      this.expectMsgPF(500 millis) { case MovePlayer(position, weight) =>
+        position != playerPosition && weight == playerWeight && lastSender == playerRef
       }
     }
   }

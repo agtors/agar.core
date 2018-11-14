@@ -1,11 +1,11 @@
 package com.agar.core.arbritrator
 
-import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, PoisonPill, Props}
+import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, Props}
 import com.agar.core.arbritrator.Player._
 import com.agar.core.context.AgarSystem
 import com.agar.core.gameplay.player.AOI
 import com.agar.core.gameplay.player.Player.{KilledPlayer, Tick}
-import com.agar.core.region.Protocol.{Destroy, GetEntitiesAOISet, Kill, Move}
+import com.agar.core.region.Protocol.{GetEntitiesAOISet, Killed, Move}
 import com.agar.core.utils.Vector2d
 
 import scala.language.postfixOps
@@ -103,12 +103,11 @@ class Arbitrator(region: ActorRef)(implicit agarSystem: AgarSystem) extends Acto
       context become inProgressGameTurn(newPlayers)
 
     case KilledPlayer =>
-      region ! Kill(sender)
+      region ! Killed(sender)
 
     case TimeOutTurn =>
       runningPlayers(players).foreach { case (player, _) =>
-        player ! PoisonPill
-        region ! Destroy(player)
+        region ! Killed(player)
       }
 
       context become waitingForNewGameTurn

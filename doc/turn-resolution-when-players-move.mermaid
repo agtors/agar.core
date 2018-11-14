@@ -1,0 +1,15 @@
+sequenceDiagram
+    participant Region
+    participant Arbitre
+    participant Player1
+    participant Player2
+
+Arbitre ->>  Region:GetEntitiesAOISet
+Region  ->>  Arbitre:Set(P*AOI)
+Arbitre ->>  Player1:Tick(AOI)
+Arbitre ->>  Player2:Tick(AOI)
+Player1 ->>  Arbitre:MovedPlayer(Position*Weight)
+Arbitre ->>  Region:Moved(Player1*Position*Weight)
+Player2 ->>  Arbitre:MovedPlayer(Position*Weight)
+Arbitre ->>  Region:Moved(Player2*Position*Weight)
+Arbitre ->>  Region:GetEntitiesAOISet

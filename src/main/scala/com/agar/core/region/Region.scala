@@ -1,7 +1,5 @@
 package com.agar.core.region
 
-import java.util.UUID
-
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import com.agar.core.arbritrator.Protocol.AOISet
 import com.agar.core.gameplay.energy.Energy
@@ -39,7 +37,7 @@ object Protocol {
 
   case class Move(player: ActorRef, position: Vector2d, weight: Int)
 
-  case class Kill(player: ActorRef)
+  case class Killed(player: ActorRef)
 
   case class Destroy(player: ActorRef)
 
@@ -70,7 +68,7 @@ class Region(journal: ActorRef)(width: Int, height: Int) extends Actor with Stas
         players + (player -> PlayerState(position, state.weight + weight, state.velocity, state.virtual))
       }
 
-    case Kill(player) =>
+    case Killed(player) =>
       players.get(player).foreach { s =>
         energies = energies + (createNewEnergy(s.weight) -> EnergyState(s.position, s.weight))
         context.stop(player)
@@ -121,7 +119,7 @@ class Region(journal: ActorRef)(width: Int, height: Int) extends Actor with Stas
   }
 
   private def createNewPlayer(position: Vector2d, weight: Int): ActorRef = {
-    context.actorOf(Player.props(position, weight), s"player-${UUID.randomUUID().toString}")
+    context.actorOf(Player.props(position, weight)(self))
   }
 
   private def createNewEnergy(valueOfEnergy: Int): ActorRef = {

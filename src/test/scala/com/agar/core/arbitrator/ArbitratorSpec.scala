@@ -7,7 +7,7 @@ import com.agar.core.arbritrator.Protocol.{AOISet, MovePlayer, StartGameTurn}
 import com.agar.core.context.AgarSystem
 import com.agar.core.gameplay.player.AOI
 import com.agar.core.gameplay.player.Player.Tick
-import com.agar.core.region.Protocol.{Destroy, GetEntitiesAOISet, Move}
+import com.agar.core.region.Protocol.{Destroy, GetEntitiesAOISet, Killed, Move}
 import com.agar.core.utils.Vector2d
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
@@ -95,7 +95,7 @@ class ArbitratorSpec(_system: ActorSystem)
 
       // Simulate region response
       arbitrator ! AOISet(Map(player -> AOI(List(), List())))
-      testProbe.expectMsg(500 millis, Destroy(player))
+      testProbe.expectMsg(500 millis, Killed(player))
 
     }
   }

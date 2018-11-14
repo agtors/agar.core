@@ -1,11 +1,12 @@
 package com.agar.core.gameplay.player
 
-import akka.actor.{Actor, Props}
+import akka.actor.{Actor, ActorRef, Props}
 import com.agar.core.arbritrator.Protocol.MovePlayer
 import com.agar.core.gameplay.Behavior
 import com.agar.core.gameplay.Behavior.TargetEntity
 import com.agar.core.gameplay.energy.Energy.TryConsume
 import com.agar.core.gameplay.player.Player.{CollectEnergy, State}
+import com.agar.core.region.Protocol.Killed
 import com.agar.core.utils.Vector2d
 
 object Player {
@@ -23,7 +24,7 @@ object Player {
 
   case object Wander extends State
 
-  def props(position: Vector2d, weight: Int): Props = Props(new Player(position, weight))
+  def props(position: Vector2d, weight: Int)(region: ActorRef): Props = Props(new Player(position, weight)(region))
 
   case class Tick(aoi: AOI)
 
@@ -33,7 +34,7 @@ object Player {
 
 }
 
-class Player(var position: Vector2d, var weight: Int, var activeState: List[State] = List(CollectEnergy)) extends Actor {
+class Player(var position: Vector2d, var weight: Int, var activeState: List[State] = List(CollectEnergy))(region: ActorRef) extends Actor {
 
   import com.agar.core.gameplay.player.Player._
 
@@ -59,12 +60,13 @@ class Player(var position: Vector2d, var weight: Int, var activeState: List[Stat
       }
 
     case TryKill =>
+      region ! Killed(self)
       context become killed
   }
 
   def killed: Receive = {
     case Tick(_) =>
-      sender ! KilledPlayer
+      ()
   }
 
   def update(areaOfInterest: AOI): Unit = {
