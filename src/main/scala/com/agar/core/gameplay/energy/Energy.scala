@@ -14,15 +14,14 @@ object Energy {
 
 class Energy(value: Int) extends Actor {
 
-  def receive: PartialFunction[Any, Unit] = {
+  def receive: Receive = {
     case Consume =>
       sender ! Consumed(value)
       context become consumed
   }
 
-  def consumed: PartialFunction[Any, Unit] = {
-    case Consume =>
-      ()
+  def consumed: Receive = {
+    case _ => ()
   }
 
 }

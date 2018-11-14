@@ -5,22 +5,14 @@ import com.agar.core.arbritrator.Player._
 import com.agar.core.context.AgarSystem
 import com.agar.core.gameplay.player.AOI
 import com.agar.core.gameplay.player.Player.Tick
-import com.agar.core.region.Region.GetEntitiesAOISet
+import com.agar.core.region.Protocol.{Destroy, GetEntitiesAOISet, Move}
+import com.agar.core.utils.Vector2d
 
 import scala.language.postfixOps
 
 // TEMPORARY DEFINITIONS -----------------------------------------------------------------------------------------------
 
 object Player {
-  type Position = Any
-
-  case object StartGameTurn
-
-  case class MovePlayer(player: ActorRef, position: Position)
-
-  case class DestroyPlayer(player: ActorRef)
-
-  // -------------------------------------------------------------------------------------------------------------------
 
   sealed trait Status
 
@@ -28,18 +20,24 @@ object Player {
 
   case object Running extends Status
 
-
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
 object Arbitrator {
 
-  def props(region: ActorRef)(implicit agarContext: AgarSystem): Props = Props(new Arbitrator(region)(agarContext))
+  def props(region: ActorRef)(implicit agarContext: AgarSystem): Props =
+    Props(new Arbitrator(region)(agarContext))
 
 }
 
-object ArbitratorProtocol {
+object Protocol {
+
+  case class StartNewGame(players: Int, energies: Int)
+
+  case object StartGameTurn
+
+  case class MovePlayer(position: Vector2d)
 
   case class AOISet(players: Map[ActorRef, AOI])
 
@@ -49,7 +47,7 @@ object ArbitratorProtocol {
 
 class Arbitrator(region: ActorRef)(implicit agarSystem: AgarSystem) extends Actor with ActorLogging {
 
-  import com.agar.core.arbritrator.ArbitratorProtocol._
+  import com.agar.core.arbritrator.Protocol._
   import context.dispatcher
 
   type PlayersAOI = Map[ActorRef, AOI]
@@ -76,6 +74,8 @@ class Arbitrator(region: ActorRef)(implicit agarSystem: AgarSystem) extends Acto
   def waitingForAOISet: Receive = {
     case AOISet(players) =>
 
+      // logging.Logger.getAnonymousLogger.info(s"Starting a new game turn with ${players.size} players")
+
       val waitingPlayers = players.map { case (player, area) =>
         player ! Tick(area)
         player -> Running
@@ -91,13 +91,13 @@ class Arbitrator(region: ActorRef)(implicit agarSystem: AgarSystem) extends Acto
   //
 
   def inProgressGameTurn(players: PlayersStatus): Receive = {
-    case event@MovePlayer(player, _) =>
+    case MovePlayer(position) =>
 
-      val newPlayers = players.get(player).fold {
+      val newPlayers = players.get(sender).fold {
         players
       } { _ =>
-        region ! event
-        players + (player -> Ended)
+        region ! Move(sender, position)
+        players + (sender -> Ended)
       }
 
       context become inProgressGameTurn(newPlayers)
@@ -105,7 +105,7 @@ class Arbitrator(region: ActorRef)(implicit agarSystem: AgarSystem) extends Acto
     case TimeOutTurn =>
       runningPlayers(players).foreach { case (player, _) =>
         player ! PoisonPill
-        region ! DestroyPlayer(player)
+        region ! Destroy(player)
       }
 
       context become waitingForNewGameTurn

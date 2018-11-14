@@ -3,7 +3,7 @@ package com.agar.core.gameplay.player
 import akka.actor.{Actor, ActorSystem, Props}
 import akka.testkit.TestKit
 import com.agar.core.context.AgarSystem
-import com.agar.core.region.{EnergyState, PlayerState}
+import com.agar.core.region.State.{EnergyState, PlayerState}
 import com.agar.core.utils.Vector2d
 import org.scalatest.{Matchers, WordSpecLike}
 
