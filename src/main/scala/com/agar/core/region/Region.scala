@@ -10,6 +10,8 @@ import com.agar.core.region.Protocol._
 import com.agar.core.region.State.{EnergyState, PlayerState}
 import com.agar.core.utils.Vector2d
 
+import scala.util.Random
+
 object State {
 
   case class PlayerState(position: Vector2d, weight: Int, velocity: Vector2d, virtual: Boolean = false) {
@@ -206,7 +208,7 @@ class Region(width: Int, height: Int, frontier: Int)(journal: ActorRef, bridge: 
 
     this.players = players ++ (0 until nbOfPlayer)
       .map { _ =>
-        val position = Vector2d(r.nextInt(width), r.nextInt(height))
+        val position: Vector2d = generatePosition(r)
         val player = createNewPlayer(position, WEIGHT_AT_START)
         val state = PlayerState(position, WEIGHT_AT_START, DEFAULT_VELOCITY)
         val virtual = manageVirtualPlayer(player, state)
@@ -216,8 +218,7 @@ class Region(width: Int, height: Int, frontier: Int)(journal: ActorRef, bridge: 
 
     this.energies = energies ++ (0 until nbOfStartingEnergy)
       .map { _ =>
-        val partition = 7000
-        val position = Vector2d(r.nextInt(partition) * width / partition, r.nextInt(partition) * height / partition)
+        val position: Vector2d = generatePosition(r)
         val powerOfTheEnergy = 1 + r.nextInt(MAX_ENERGY_VALUE)
         val energy = createNewEnergy(powerOfTheEnergy)
         val state = EnergyState(position, powerOfTheEnergy)
@@ -225,6 +226,12 @@ class Region(width: Int, height: Int, frontier: Int)(journal: ActorRef, bridge: 
 
         energy -> state.virtual(virtual)
       }.toMap
+  }
+
+  private def generatePosition(r: Random) = {
+    val partition = 7000
+
+    Vector2d(r.nextInt(partition) * width / partition, r.nextInt(partition) * height / partition)
   }
 
   private def createNewPlayer(position: Vector2d, weight: Int): ActorRef = {

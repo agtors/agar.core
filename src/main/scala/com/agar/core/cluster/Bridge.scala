@@ -1,7 +1,10 @@
-package com.agar.core.bridge
+package com.agar.core.cluster
 
 import akka.actor.{Actor, ActorLogging, Props}
-import com.agar.core.bridge.Bridge.FromBridge
+import akka.cluster.Cluster
+import akka.cluster.ClusterEvent._
+import com.agar.core.cluster.Bridge.FromBridge
+import com.agar.core.region.Protocol.Virtual
 
 object Bridge {
 
@@ -15,9 +18,10 @@ class Bridge(port: Int) extends Actor with ActorLogging {
 
   val regionAddress = s"akka.tcp://agar@127.0.0.1:$port/user/region"
 
-  override def receive: Receive = {
+  def receive: Receive = {
 
-    case event =>
+    case event@Virtual(_) =>
+      println(event)
       context.actorSelection(regionAddress) ! FromBridge(event)
 
   }
