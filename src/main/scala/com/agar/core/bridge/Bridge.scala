@@ -18,7 +18,6 @@ class Bridge(port: Int) extends Actor with ActorLogging {
   override def receive: Receive = {
 
     case event =>
-      log.info(event.toString)
       context.actorSelection(regionAddress) ! FromBridge(event)
 
   }

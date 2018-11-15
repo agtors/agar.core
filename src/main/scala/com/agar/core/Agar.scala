@@ -48,5 +48,4 @@ object Agar extends App {
   // Initialize and start the game
   region ! InitRegion(nbPlayers, nbEnergies)
   arbitrator ! StartGameTurn
-
 }
