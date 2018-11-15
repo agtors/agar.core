@@ -188,6 +188,30 @@ class RegionTest(_system: ActorSystem)
     expectedCorrectMessage should be(true)
   }
 
+  "kill a player in the region not in the frontier" in {
+    implicit val context: AgarSystem = () => 2 seconds
+
+    val journal = TestProbe()
+    val bridge = TestProbe()
+    val region = system.actorOf(Region.props(10, 10, 5)(journal.ref, bridge.ref))
+
+    region ! InitRegion(0, 0)
+
+    journal.expectMsgPF(500 millis) {
+      case Initialized(_, _) => ()
+    }
+
+    region ! CreatePlayer(PlayerState(Vector2d(10, 6), 0, Vector2d(0, 0)))
+    region ! GetEntitiesAOISet
+
+    val player = journal.expectMsgPF(500 millis) { case WorldState(newPlayers, _) => newPlayers.toList.head._1 }
+
+    region ! Killed(player)
+
+    bridge.expectNoMessage(500 millis)
+
+  }
+
   "move a player out the frontier and the region" in {
     implicit val context: AgarSystem = () => 2 seconds
 
