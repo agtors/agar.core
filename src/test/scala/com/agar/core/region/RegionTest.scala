@@ -68,29 +68,6 @@ class RegionTest(_system: ActorSystem)
     }
   }
 
-  "initialize a fresh region with one fresh energy in the frontier" in {
-    implicit val context: AgarSystem = () => 2 seconds
-
-    val journal = TestProbe()
-    val bridge = TestProbe()
-    val region = system.actorOf(Region.props(10, 10, 10)(journal.ref, bridge.ref))
-
-    region ! InitRegion(0, 1)
-
-    val expectedCorrectInit = journal.expectMsgPF() {
-      case Initialized(players, energies) => {
-        players.size === 0 && energies.size === 1
-      }
-    }
-
-    expectedCorrectInit should be(true)
-
-    bridge.expectMsgPF(500 millis) {
-      case Virtual(RegisterEnergy(_, _)) => true
-    }
-
-  }
-
   "move a player in the frontier" in {
     implicit val context: AgarSystem = () => 2 seconds
 
@@ -233,6 +210,57 @@ class RegionTest(_system: ActorSystem)
 
     val expectedCorrectMessage = bridge.expectMsgPF(500 millis) {
       case Virtual(CreatePlayer(PlayerState(Vector2d(10, -7), 0, Vector2d(0, 0), false))) => true
+    }
+
+    expectedCorrectMessage should be(true)
+  }
+
+  "initialize a fresh region with one fresh energy in the frontier" in {
+    implicit val context: AgarSystem = () => 2 seconds
+
+    val journal = TestProbe()
+    val bridge = TestProbe()
+    val region = system.actorOf(Region.props(10, 10, 10)(journal.ref, bridge.ref))
+
+    region ! InitRegion(0, 1)
+
+    val expectedCorrectInit = journal.expectMsgPF() {
+      case Initialized(players, energies) => {
+        players.size === 0 && energies.size === 1
+      }
+    }
+
+    expectedCorrectInit should be(true)
+
+    bridge.expectMsgPF(500 millis) {
+      case Virtual(RegisterEnergy(_, _)) => true
+    }
+
+  }
+
+  "consume an energy in a frontier" in {
+    implicit val context: AgarSystem = () => 2 seconds
+
+    val journal = TestProbe()
+    val bridge = TestProbe()
+    val region = system.actorOf(Region.props(10, 10, 10)(journal.ref, bridge.ref))
+
+    region ! InitRegion(0, 1)
+
+    val expectedCorrectInit = journal.expectMsgPF() {
+      case Initialized(players, energies) => {
+        players.size === 0 && energies.size === 1
+      }
+    }
+
+    expectedCorrectInit should be(true)
+
+    val energy = bridge.expectMsgPF(500 millis) { case Virtual(RegisterEnergy(p, _)) => p }
+
+    region ! Destroy(energy)
+
+    val expectedCorrectMessage = bridge.expectMsgPF(500 millis) {
+      case Virtual(Destroy(p)) => energy === p
     }
 
     expectedCorrectMessage should be(true)
