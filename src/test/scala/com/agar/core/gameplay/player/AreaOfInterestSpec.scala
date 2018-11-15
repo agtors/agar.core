@@ -38,7 +38,7 @@ class AreaOfInterestSpec(_system: ActorSystem)
         energyStub2 -> EnergyState(Vector2d(9800, 9800), 10), // energy for playerStub3
       )
 
-      val areaOfInterestSet = AreaOfInterest.getPlayersAOISet(players, energies)
+      val areaOfInterestSet = AreaOfInterest.getPlayersAOISet(players, Map(), energies, Map())
 
       areaOfInterestSet.get(playerStub1) should be(
         Some(

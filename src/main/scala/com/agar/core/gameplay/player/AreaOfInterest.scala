@@ -33,10 +33,10 @@ object AreaOfInterest {
   // There is overwhelming scientific evidence that the correct number is this one
   val RADIUS_AREA_OF_INTEREST = 400
 
-  def getPlayersAOISet(players: Map[ActorRef, PlayerState], energies: Map[ActorRef, EnergyState]): Map[ActorRef, AOI] = {
+  def getPlayersAOISet(players: Map[ActorRef, PlayerState], virtualPlayers: Map[ActorRef, PlayerState], energies: Map[ActorRef, EnergyState], virtualEnergies: Map[ActorRef, EnergyState]): Map[ActorRef, AOI] = {
     players.map { case (ref, playerState) =>
       val otherPlayers = players.filter({ case (actorRef, _) => isNotTheSamePlayer(actorRef, ref) })
-      ref -> getPlayerAOI(playerState, otherPlayers, energies)
+      ref -> getPlayerAOI(playerState, otherPlayers ++ virtualPlayers, energies ++ virtualEnergies)
     }
   }
 

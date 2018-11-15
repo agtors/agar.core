@@ -1,75 +1,52 @@
 package com.agar.core
 
-
-import akka.actor.{ActorRef, ActorSystem}
+import akka.actor.ActorSystem
 import com.agar.core.arbritrator.Arbitrator
-<<<<<<< HEAD
-<<<<<<< HEAD
 import com.agar.core.arbritrator.Protocol.StartGameTurn
+import com.agar.core.bridge.Bridge
 import com.agar.core.context.AgarSystem
 import com.agar.core.logger.Journal
 import com.agar.core.region.Protocol.InitRegion
 import com.agar.core.region.Region
+import com.typesafe.config.ConfigFactory
 
 import scala.concurrent.duration._
-=======
-import com.agar.core.arbritrator.Player.StartGameTurn
-=======
-import com.agar.core.arbritrator.Arbitrator.StartGameTurn
->>>>>>> Review and simplify protocol Region <-> Arbitrator <-> Player
-import com.agar.core.bridge.Bridge
-import com.agar.core.context.{AgarSystem, DefaultAgarSystem}
-import com.agar.core.logger.Logger
-import com.agar.core.region.Region
-import com.agar.core.region.Region.InitRegion
-import com.typesafe.config.ConfigFactory
->>>>>>> Add first definitions and bridge actor for clustering
+import scala.language.postfixOps
 
 object Agar extends App {
 
-<<<<<<< HEAD
-  val nbPlayer = getArg(0).getOrElse("2").toInt
-  val nbEnergy = getArg(1).getOrElse("0").toInt
+  val regionName = args(0)
 
-<<<<<<< HEAD
-  implicit val system: ActorSystem = ActorSystem("agar")
-  implicit val context: AgarSystem = () => 1 second
+  // Setup the configuration (still ugly)
+  val regionConfig = ConfigFactory.load("regions")
+
+  val nbPlayers = regionConfig.getInt(s"agar.$regionName.entities.players")
+  val nbEnergies = regionConfig.getInt(s"agar.$regionName.entities.energies")
+
+  val width = regionConfig.getInt(s"agar.$regionName.map.width")
+  val height = regionConfig.getInt(s"agar.$regionName.map.height")
+  val frontier = regionConfig.getInt(s"agar.$regionName.map.frontier")
+
+
+  val remotePort = regionConfig.getInt(regionConfig.getString(s"agar.$regionName.cluster.remote.ref"))
+  System.setProperty("PORT", regionConfig.getInt(s"agar.$regionName.cluster.port").toString)
+
+  val httpHost = regionConfig.getString(s"agar.$regionName.http.host")
+  val httpPort = regionConfig.getInt(s"agar.$regionName.http.port")
+
+  // Contexts creation
+  val seedConfig = ConfigFactory.load("agar-seeds")
+  implicit val system: ActorSystem = ActorSystem("agar", seedConfig)
+  implicit val context: AgarSystem = () => 200 millis
 
   // Actors creation
-  val journal: ActorRef = system.actorOf(Journal.props)
-  val region = system.actorOf(Region.props(journal, 7680, 4320), "region")
+  val journal = system.actorOf(Journal.props(httpHost, httpPort))
+  val bridge = system.actorOf(Bridge.props(remotePort))
+  val region = system.actorOf(Region.props(width, height, frontier)(journal, bridge), "region")
   val arbitrator = system.actorOf(Arbitrator.props(region), "arbitrator")
 
   // Initialize and start the game
-  region ! InitRegion(nbPlayer, nbEnergy)
+  region ! InitRegion(nbPlayers, nbEnergies)
   arbitrator ! StartGameTurn
-
-  def getArg(index: Int): Option[String] = {
-    if (index < args.length) {
-      Option(args(index))
-    } else {
-      Option.empty
-    }
-  }
-=======
-=======
->>>>>>> Review test and change arguments according to the new protocol
-  val nbPlayer = args(0).toInt
-  val nbEnergy = args(1).toInt
-  val remotePort = args(2).toInt
-
-  val seedConfig = ConfigFactory.load("seed")
-
-  implicit val system: ActorSystem = ActorSystem("agar", seedConfig)
-  implicit val context: AgarSystem = DefaultAgarSystem
-
-  val journal = system.actorOf(Logger.props, "logger")
-  val bridge = system.actorOf(Bridge.props(remotePort))
-  val region = system.actorOf(Region.props(bridge, journal, 7680, 4320), "region")
-  val arbitrator: ActorRef = system.actorOf(Arbitrator.props(bridge, region), "arbitrator")
-
-  region ! InitRegion(nbPlayer, nbEnergy)
-  arbitrator ! StartGameTurn
->>>>>>> Add first definitions and bridge actor for clustering
 
 }

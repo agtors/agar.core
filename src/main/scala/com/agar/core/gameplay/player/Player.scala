@@ -1,11 +1,7 @@
 package com.agar.core.gameplay.player
 
 import akka.actor.{Actor, ActorRef, Props}
-<<<<<<< HEAD
 import com.agar.core.arbritrator.Protocol.MovePlayer
-=======
-import com.agar.core.arbritrator.Arbitrator.MovePlayer
->>>>>>> Review and simplify protocol Region <-> Arbitrator <-> Player
 import com.agar.core.gameplay.Behavior
 import com.agar.core.gameplay.Behavior.TargetEntity
 import com.agar.core.gameplay.energy.Energy.TryConsume
@@ -48,7 +44,6 @@ class Player(var position: Vector2d, var weight: Int, var activeState: List[Stat
 
   override def receive(): Receive = {
     case Tick(areaOfInterest) =>
-<<<<<<< HEAD
       val energies = energiesToConsume(areaOfInterest.energies)
       if (energies.nonEmpty) {
         energies.head.ref ! TryConsume
@@ -67,17 +62,6 @@ class Player(var position: Vector2d, var weight: Int, var activeState: List[Stat
     case TryKill =>
       region ! Killed(self)
       context become killed
-=======
-      update(areaOfInterest)
-      arbitrator ! MovePlayer(Vector2d(position.x, position.y))
-    case Consumed(v) =>
-      this.weight += v
-      //TODO send message to region
-    case Eat =>
-      sender ! EatSuccess(this.weight)
-    case EatSuccess(v) =>
-      this.weight += v
->>>>>>> Review and simplify protocol Region <-> Arbitrator <-> Player
   }
 
   def killed: Receive = {
