@@ -8,6 +8,7 @@ import com.agar.core.context.AgarSystem
 import com.agar.core.logger.Journal
 import com.agar.core.region.Protocol.InitRegion
 import com.agar.core.region.Region
+import com.agar.core.utils.RegionBoundaries
 import com.typesafe.config.ConfigFactory
 
 import scala.collection.JavaConverters._
@@ -26,15 +27,15 @@ object Agar extends App {
   val nbPlayers = regionConfig.getInt(s"agar.$regionName.entities.players")
   val nbEnergies = regionConfig.getInt(s"agar.$regionName.entities.energies")
 
-  val worldSquare = regionConfig.getDoubleList(s"agar.world.map.region").asScala.toList.map {
+  val worldSquare = RegionBoundaries(regionConfig.getDoubleList(s"agar.world.map.region").asScala.toList.map {
     _.toDouble
-  }
-  val regionSquare = regionConfig.getDoubleList(s"agar.$regionName.map.region").asScala.toList.map {
+  })
+  val regionSquare = RegionBoundaries(regionConfig.getDoubleList(s"agar.$regionName.map.region").asScala.toList.map {
     _.toDouble
-  }
-  val frontierSquare = regionConfig.getDoubleList(s"agar.$regionName.map.frontier").asScala.toList.map {
+  })
+  val frontierSquare = RegionBoundaries(regionConfig.getDoubleList(s"agar.$regionName.map.frontier").asScala.toList.map {
     _.toDouble
-  }
+  })
 
   val remotePort = regionConfig.getInt(s"agar.$regionName.cluster.remote")
   System.setProperty("PORT", regionConfig.getInt(s"agar.$regionName.cluster.port").toString)

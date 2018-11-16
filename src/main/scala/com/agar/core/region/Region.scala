@@ -8,7 +8,7 @@ import com.agar.core.gameplay.player.{AreaOfInterest, Player}
 import com.agar.core.logger.Journal.WorldState
 import com.agar.core.region.Protocol._
 import com.agar.core.region.State.{EnergyState, PlayerState}
-import com.agar.core.utils.{Algorithm, Vector2d}
+import com.agar.core.utils.{RegionBoundaries, Vector2d}
 
 import scala.util.Random
 
@@ -25,7 +25,7 @@ object State {
 }
 
 object Region {
-  def props(worldSquare: List[Double], regionSquare: List[Double], frontierSquare: List[Double])
+  def props(worldSquare: RegionBoundaries, regionSquare: RegionBoundaries, frontierSquare: RegionBoundaries)
            (journal: ActorRef, bridge: ActorRef): Props =
     Props(new Region(worldSquare, regionSquare, frontierSquare)(journal, bridge))
 }
@@ -64,7 +64,7 @@ trait Constants {
   def WEIGHT_AT_START = 1
 }
 
-class Region(worldSquare: List[Double], regionSquare: List[Double], frontierSquare: List[Double])(journal: ActorRef, bridge: ActorRef) extends Actor with Stash with ActorLogging with Constants {
+class Region(worldSquare: RegionBoundaries, regionSquare: RegionBoundaries, frontierSquare: RegionBoundaries)(journal: ActorRef, bridge: ActorRef) extends Actor with Stash with ActorLogging with Constants {
 
   var players: Map[ActorRef, PlayerState] = Map()
   var energies: Map[ActorRef, EnergyState] = Map()
@@ -244,17 +244,17 @@ class Region(worldSquare: List[Double], regionSquare: List[Double], frontierSqua
 
   private def generatePosition(r: Random) = {
     Vector2d(
-      r.nextDouble() * Algorithm.height(regionSquare),
-      r.nextDouble() * Algorithm.width(regionSquare)
+      r.nextDouble() * regionSquare.height,
+      r.nextDouble() * regionSquare.width
     )
   }
 
   private def isInRegion(position: Vector2d, weight: Int): Boolean = {
-    Algorithm.isInSquare(position, weight, regionSquare)
+    regionSquare.intersect(position, weight)
   }
 
   private def isInFrontier(position: Vector2d, weight: Int): Boolean = {
-    Algorithm.isInSquare(position, weight, frontierSquare)
+    frontierSquare.intersect(position, weight)
   }
 
 }

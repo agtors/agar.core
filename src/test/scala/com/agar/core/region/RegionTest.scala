@@ -6,7 +6,7 @@ import com.agar.core.context.AgarSystem
 import com.agar.core.logger.Journal.WorldState
 import com.agar.core.region.Protocol._
 import com.agar.core.region.State.PlayerState
-import com.agar.core.utils.Vector2d
+import com.agar.core.utils.{RegionBoundaries, Vector2d}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.concurrent.duration._
@@ -31,7 +31,7 @@ class RegionTest(_system: ActorSystem)
 
       val journal = TestProbe()
       val bridge = TestProbe()
-      val region = system.actorOf(Region.props(List(-10, -10, 10, 10), List(0, 0, 10, 10), List(0, 0, 10, 5))(journal.ref, bridge.ref))
+      val region = system.actorOf(Region.props(RegionBoundaries(-10, -10, 10, 10), RegionBoundaries(0, 0, 10, 10), RegionBoundaries(0, 0, 10, 5))(journal.ref, bridge.ref))
 
       region ! InitRegion(2, 2)
 
@@ -49,7 +49,7 @@ class RegionTest(_system: ActorSystem)
 
       val journal = TestProbe()
       val bridge = TestProbe()
-      val region = system.actorOf(Region.props(List(-10, -10, 10, 10), List(0, 0, 10, 10), List(0, 0, 10, 10))(journal.ref, bridge.ref))
+      val region = system.actorOf(Region.props(RegionBoundaries(-10, -10, 10, 10), RegionBoundaries(0, 0, 10, 10), RegionBoundaries(0, 0, 10, 10))(journal.ref, bridge.ref))
 
       region ! InitRegion(1, 0)
 
@@ -72,7 +72,7 @@ class RegionTest(_system: ActorSystem)
 
       val journal = TestProbe()
       val bridge = TestProbe()
-      val region = system.actorOf(Region.props(List(-10, -10, 10, 10), List(0, 0, 10, 10), List(0, -5, 10, 5))(journal.ref, bridge.ref))
+      val region = system.actorOf(Region.props(RegionBoundaries(-10, -10, 10, 10), RegionBoundaries(0, 0, 10, 10), RegionBoundaries(0, -5, 10, 5))(journal.ref, bridge.ref))
 
       region ! InitRegion(0, 0)
 
@@ -99,7 +99,7 @@ class RegionTest(_system: ActorSystem)
 
       val journal = TestProbe()
       val bridge = TestProbe()
-      val region = system.actorOf(Region.props(List(-10, -10, 10, 10), List(0, 0, 10, 10), List(0, -5, 10, 5))(journal.ref, bridge.ref))
+      val region = system.actorOf(Region.props(RegionBoundaries(-10, -10, 10, 10), RegionBoundaries(0, 0, 10, 10), RegionBoundaries(0, -5, 10, 5))(journal.ref, bridge.ref))
 
       region ! InitRegion(0, 0)
 
@@ -130,7 +130,7 @@ class RegionTest(_system: ActorSystem)
 
       val journal = TestProbe()
       val bridge = TestProbe()
-      val region = system.actorOf(Region.props(List(-10, -10, 10, 10), List(0, 0, 10, 10), List(0, -5, 10, 5))(journal.ref, bridge.ref))
+      val region = system.actorOf(Region.props(RegionBoundaries(-10, -10, 10, 10), RegionBoundaries(0, 0, 10, 10), RegionBoundaries(0, -5, 10, 5))(journal.ref, bridge.ref))
 
       region ! InitRegion(0, 0)
 
@@ -161,7 +161,7 @@ class RegionTest(_system: ActorSystem)
 
       val journal = TestProbe()
       val bridge = TestProbe()
-      val region = system.actorOf(Region.props(List(-10, -10, 10, 10), List(0, 0, 10, 10), List(0, -5, 10, 5))(journal.ref, bridge.ref))
+      val region = system.actorOf(Region.props(RegionBoundaries(-10, -10, 10, 10), RegionBoundaries(0, 0, 10, 10), RegionBoundaries(0, -5, 10, 5))(journal.ref, bridge.ref))
 
       region ! InitRegion(0, 0)
 
@@ -192,7 +192,7 @@ class RegionTest(_system: ActorSystem)
 
       val journal = TestProbe()
       val bridge = TestProbe()
-      val region = system.actorOf(Region.props(List(-10, -10, 10, 10), List(0, 0, 10, 10), List(0, -5, 10, 5))(journal.ref, bridge.ref))
+      val region = system.actorOf(Region.props(RegionBoundaries(-10, -10, 10, 10), RegionBoundaries(0, 0, 10, 10), RegionBoundaries(0, -5, 10, 5))(journal.ref, bridge.ref))
 
       region ! InitRegion(0, 0)
 
@@ -216,7 +216,7 @@ class RegionTest(_system: ActorSystem)
 
       val journal = TestProbe()
       val bridge = TestProbe()
-      val region = system.actorOf(Region.props(List(-10, -10, 10, 10), List(0, 0, 10, 10), List(0, -5, 10, 5))(journal.ref, bridge.ref))
+      val region = system.actorOf(Region.props(RegionBoundaries(-10, -10, 10, 10), RegionBoundaries(0, 0, 10, 10), RegionBoundaries(0, -5, 10, 5))(journal.ref, bridge.ref))
 
       region ! InitRegion(0, 0)
 
@@ -243,7 +243,7 @@ class RegionTest(_system: ActorSystem)
 
       val journal = TestProbe()
       val bridge = TestProbe()
-      val region = system.actorOf(Region.props(List(-10, -10, 10, 10), List(0, 0, 10, 10), List(0, -5, 10, 10))(journal.ref, bridge.ref))
+      val region = system.actorOf(Region.props(RegionBoundaries(-10, -10, 10, 10), RegionBoundaries(0, 0, 10, 10), RegionBoundaries(0, -5, 10, 10))(journal.ref, bridge.ref))
 
       region ! InitRegion(0, 1)
 
@@ -266,7 +266,7 @@ class RegionTest(_system: ActorSystem)
 
       val journal = TestProbe()
       val bridge = TestProbe()
-      val region = system.actorOf(Region.props(List(-10, -10, 10, 10), List(0, 0, 10, 10), List(0, -5, 10, 10))(journal.ref, bridge.ref))
+      val region = system.actorOf(Region.props(RegionBoundaries(-10, -10, 10, 10), RegionBoundaries(0, 0, 10, 10), RegionBoundaries(0, -5, 10, 10))(journal.ref, bridge.ref))
 
       region ! InitRegion(0, 1)
 

@@ -7,7 +7,7 @@ import com.agar.core.gameplay.Behavior.TargetEntity
 import com.agar.core.gameplay.energy.Energy.TryConsume
 import com.agar.core.gameplay.player.Player.{CollectEnergy, State}
 import com.agar.core.region.Protocol.Killed
-import com.agar.core.utils.{Algorithm, Vector2d}
+import com.agar.core.utils.{RegionBoundaries, Vector2d}
 
 object Player {
 
@@ -24,7 +24,7 @@ object Player {
 
   case object Wander extends State
 
-  def props(worldSquare: List[Double], position: Vector2d, weight: Int)(region: ActorRef): Props = Props(new Player(worldSquare, position, weight)(region))
+  def props(worldSquare: RegionBoundaries, position: Vector2d, weight: Int)(region: ActorRef): Props = Props(new Player(worldSquare, position, weight)(region))
 
   case class Tick(aoi: AOI)
 
@@ -34,7 +34,7 @@ object Player {
 
 }
 
-class Player(worldSquare: List[Double], var position: Vector2d, var weight: Int, var activeState: List[State] = List(CollectEnergy))(region: ActorRef) extends Actor {
+class Player(worldSquare: RegionBoundaries, var position: Vector2d, var weight: Int, var activeState: List[State] = List(CollectEnergy))(region: ActorRef) extends Actor {
 
   import com.agar.core.gameplay.player.Player._
 
@@ -173,7 +173,7 @@ class Player(worldSquare: List[Double], var position: Vector2d, var weight: Int,
 
   private def moveBasedOnVelocity(steering: Vector2d): Unit = {
     this.velocity = truncateAt(velocity + steering, MAX_VELOCITY)
-    this.position = Algorithm.clamp(position + velocity, worldSquare)
+    this.position = worldSquare.clamp(position + velocity)
   }
 
   private def truncateAt(v: Vector2d, n: Double): Vector2d = {
