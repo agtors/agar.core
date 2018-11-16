@@ -4,7 +4,7 @@ package com.agar.core.region
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import com.agar.core.arbritrator.Protocol.AOISet
 import com.agar.core.gameplay.energy.Energy
-import com.agar.core.gameplay.player.{AreaOfInterest, Player}
+import com.agar.core.gameplay.player.{AreaOfInterest, Player, VirtualPlayer}
 import com.agar.core.logger.Journal.WorldState
 import com.agar.core.region.Protocol._
 import com.agar.core.region.State.{EnergyState, PlayerState}
@@ -57,11 +57,11 @@ object Protocol {
 }
 
 trait Constants {
-  def MAX_ENERGY_VALUE = 10
+  def MAX_ENERGY_VALUE = 50
 
   def DEFAULT_VELOCITY = Vector2d(2, 2)
 
-  def WEIGHT_AT_START = 1
+  def WEIGHT_AT_START = 10
 }
 
 class Region(worldSquare: RegionBoundaries, regionSquare: RegionBoundaries, frontierSquare: RegionBoundaries)(journal: ActorRef, bridge: ActorRef) extends Actor with Stash with ActorLogging with Constants {
@@ -126,6 +126,7 @@ class Region(worldSquare: RegionBoundaries, regionSquare: RegionBoundaries, fron
       }
 
     case e@Destroy(energy) =>
+      println(e)
       energies.get(energy).foreach { s =>
         if (s.virtual) bridge ! Virtual(e)
 
@@ -138,29 +139,35 @@ class Region(worldSquare: RegionBoundaries, regionSquare: RegionBoundaries, fron
 
     // Virtual messages reification
 
-    case Virtual(CreatePlayer(state)) =>
+    case e@Virtual(CreatePlayer(state)) =>
+      println(e)
       val player = createNewPlayer(state.position, state.weight)
       players = players + (player -> state.virtual(false))
 
-    case Virtual(RegisterPlayer(p, s)) =>
+    case e@Virtual(RegisterPlayer(p, s)) =>
+      println(e)
       virtualPlayers = virtualPlayers + (p -> s)
 
-    case Virtual(RegisterEnergy(p, s)) =>
+    case e@Virtual(RegisterEnergy(p, s)) =>
+      println(e)
       virtualEnergies = virtualEnergies + (p -> s)
 
-    case Virtual(Move(player, position, weight)) =>
+    case e@Virtual(Move(player, position, weight)) =>
+      println(e)
       virtualPlayers = virtualPlayers.get(player).fold {
         virtualPlayers
       } { s =>
         virtualPlayers + (player -> PlayerState(position, weight, s.velocity))
       }
 
-    case Virtual(Killed(player)) =>
+    case e@Virtual(Killed(player)) =>
+      println(e)
       virtualPlayers = virtualPlayers.filterKeys {
         player != _
       }
 
-    case Virtual(Destroy(entity)) =>
+    case e@Virtual(Destroy(entity)) =>
+      println(e)
       virtualPlayers = virtualPlayers.filterKeys {
         entity != _
       }
@@ -232,6 +239,10 @@ class Region(worldSquare: RegionBoundaries, regionSquare: RegionBoundaries, fron
 
   private def createNewPlayer(position: Vector2d, weight: Int): ActorRef = {
     context.actorOf(Player.props(worldSquare, position, weight)(self))
+  }
+
+  private def createNewVirtualPlayer(position: Vector2d, weight: Int): ActorRef = {
+    context.actorOf(VirtualPlayer.props(bridge))
   }
 
   private def createNewEnergy(valueOfEnergy: Int): ActorRef = {

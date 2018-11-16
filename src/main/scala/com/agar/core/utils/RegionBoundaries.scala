@@ -1,7 +1,7 @@
 package com.agar.core.utils
 
 object RegionBoundaries {
-  def apply(square: List[Double]): RegionBoundaries = apply(square(0), square(1), square(2), square(2))
+  def apply(square: List[Double]): RegionBoundaries = apply(square(0), square(1), square(2), square(3))
 
   def apply(minX: Double, minY: Double, maxX: Double, maxY: Double): RegionBoundaries = new RegionBoundaries(minX, minY, maxX, maxY)
 }

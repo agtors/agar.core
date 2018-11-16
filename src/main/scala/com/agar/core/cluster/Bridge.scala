@@ -16,13 +16,12 @@ object Bridge {
 
 class Bridge(port: Int) extends Actor with ActorLogging {
 
-  val regionAddress = s"akka.tcp://agar@127.0.0.1:$port/user/region"
+  val regionAddress = s"akka.tcp://agar@127.0.0.1:$port/user/bridge"
 
   def receive: Receive = {
 
     case event@Virtual(_) =>
-      println(event)
-      context.actorSelection(regionAddress) ! FromBridge(event)
+      context.actorSelection(regionAddress) ! event
 
   }
 
