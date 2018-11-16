@@ -26,7 +26,7 @@ class PlayerSpec(_system: ActorSystem)
 
       val region = TestProbe()
       val playerPosition = Vector2d(100, 100)
-      val playerRef = system.actorOf(Player.props(playerPosition, 10)(region.ref))
+      val playerRef = system.actorOf(Player.props(List(0, 0, 1000, 1000), playerPosition, 10)(region.ref))
 
       val aoi = AOI(List.empty, List.empty)
 
@@ -42,7 +42,7 @@ class PlayerSpec(_system: ActorSystem)
       val region = TestProbe()
       val playerPosition = Vector2d(100, 100)
       val playerWeight = 10
-      val playerRef = system.actorOf(Player.props(playerPosition, playerWeight)(region.ref))
+      val playerRef = system.actorOf(Player.props(List(0, 0, 1000, 1000), playerPosition, playerWeight)(region.ref))
 
       val aoi = AOI(
         List(
@@ -68,7 +68,7 @@ class PlayerSpec(_system: ActorSystem)
       val region = TestProbe()
       val playerPosition = Vector2d(100, 100)
       val playerWeight = 40
-      val playerRef = system.actorOf(Player.props(playerPosition, playerWeight)(region.ref))
+      val playerRef = system.actorOf(Player.props(List(0, 0, 1000, 1000), playerPosition, playerWeight)(region.ref))
 
       // Only weak players in the AOI
       val aoi = AOI(
@@ -94,7 +94,7 @@ class PlayerSpec(_system: ActorSystem)
       val region = TestProbe()
       val playerPosition = Vector2d(100, 100)
       val playerWeight = 10
-      val playerRef = system.actorOf(Player.props(playerPosition, playerWeight)(region.ref))
+      val playerRef = system.actorOf(Player.props(List(0, 0, 1000, 1000), playerPosition, playerWeight)(region.ref))
 
       val energyTracer = system.actorOf(Props(new Tracer(testProbe.ref)))
 
@@ -121,7 +121,7 @@ class PlayerSpec(_system: ActorSystem)
       val region = TestProbe()
       val playerPosition = Vector2d(100, 100)
       val playerWeight = 10
-      val playerRef = system.actorOf(Player.props(playerPosition, playerWeight)(region.ref))
+      val playerRef = system.actorOf(Player.props(List(0, 0, 1000, 1000), playerPosition, playerWeight)(region.ref))
 
       // Only players with the same weight in AOI
       val aoi = AOI(

@@ -10,6 +10,7 @@ import com.agar.core.region.Protocol.InitRegion
 import com.agar.core.region.Region
 import com.typesafe.config.ConfigFactory
 
+import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
@@ -25,9 +26,15 @@ object Agar extends App {
   val nbPlayers = regionConfig.getInt(s"agar.$regionName.entities.players")
   val nbEnergies = regionConfig.getInt(s"agar.$regionName.entities.energies")
 
-  val width = regionConfig.getInt(s"agar.$regionName.map.width")
-  val height = regionConfig.getInt(s"agar.$regionName.map.height")
-  val frontier = regionConfig.getInt(s"agar.$regionName.map.frontier")
+  val worldSquare = regionConfig.getDoubleList(s"agar.world.map.region").asScala.toList.map {
+    _.toDouble
+  }
+  val regionSquare = regionConfig.getDoubleList(s"agar.$regionName.map.region").asScala.toList.map {
+    _.toDouble
+  }
+  val frontierSquare = regionConfig.getDoubleList(s"agar.$regionName.map.frontier").asScala.toList.map {
+    _.toDouble
+  }
 
   val remotePort = regionConfig.getInt(s"agar.$regionName.cluster.remote")
   System.setProperty("PORT", regionConfig.getInt(s"agar.$regionName.cluster.port").toString)
@@ -43,7 +50,7 @@ object Agar extends App {
   // Actors creation
   val journal = system.actorOf(Journal.props(httpHost, httpPort))
   val bridge = system.actorOf(Bridge.props(remotePort))
-  val region = system.actorOf(Region.props(width, height, frontier)(journal, bridge))
+  val region = system.actorOf(Region.props(worldSquare, regionSquare, frontierSquare)(journal, bridge))
   val arbitrator = system.actorOf(Arbitrator.props(region))
   val cluster = system.actorOf(AgarCluster.props(() => {
     region ! InitRegion(nbPlayers, nbEnergies)

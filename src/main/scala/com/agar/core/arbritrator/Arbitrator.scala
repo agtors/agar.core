@@ -1,7 +1,7 @@
 package com.agar.core.arbritrator
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, Props}
-import com.agar.core.arbritrator.Player._
+import com.agar.core.arbritrator.PlayerStatus.{Ended, Running, Status}
 import com.agar.core.context.AgarSystem
 import com.agar.core.gameplay.player.AOI
 import com.agar.core.gameplay.player.Player.{KilledPlayer, Tick}
@@ -10,9 +10,7 @@ import com.agar.core.utils.Vector2d
 
 import scala.language.postfixOps
 
-// TEMPORARY DEFINITIONS -----------------------------------------------------------------------------------------------
-
-object Player {
+object PlayerStatus {
 
   sealed trait Status
 
@@ -21,8 +19,6 @@ object Player {
   case object Running extends Status
 
 }
-
-// ---------------------------------------------------------------------------------------------------------------------
 
 object Arbitrator {
 
@@ -108,7 +104,7 @@ class Arbitrator(region: ActorRef)(implicit agarSystem: AgarSystem) extends Acto
 
     case TimeOutTurn =>
       runningPlayers(players).foreach { case (player, _) =>
-        region ! Killed(player)
+        region ! Killed(player) // TODO(didier) Shall we kill the player?
       }
 
       context become waitingForNewGameTurn

@@ -8,7 +8,7 @@ import com.agar.core.gameplay.player.{AreaOfInterest, Player}
 import com.agar.core.logger.Journal.WorldState
 import com.agar.core.region.Protocol._
 import com.agar.core.region.State.{EnergyState, PlayerState}
-import com.agar.core.utils.Vector2d
+import com.agar.core.utils.{Algorithm, Vector2d}
 
 import scala.util.Random
 
@@ -25,7 +25,9 @@ object State {
 }
 
 object Region {
-  def props(width: Int, height: Int, frontier: Int)(journal: ActorRef, bridge: ActorRef): Props = Props(new Region(width, height, frontier)(journal, bridge))
+  def props(worldSquare: List[Double], regionSquare: List[Double], frontierSquare: List[Double])
+           (journal: ActorRef, bridge: ActorRef): Props =
+    Props(new Region(worldSquare, regionSquare, frontierSquare)(journal, bridge))
 }
 
 object Protocol {
@@ -62,7 +64,7 @@ trait Constants {
   def WEIGHT_AT_START = 1
 }
 
-class Region(width: Int, height: Int, frontier: Int)(journal: ActorRef, bridge: ActorRef) extends Actor with Stash with ActorLogging with Constants {
+class Region(worldSquare: List[Double], regionSquare: List[Double], frontierSquare: List[Double])(journal: ActorRef, bridge: ActorRef) extends Actor with Stash with ActorLogging with Constants {
 
   var players: Map[ActorRef, PlayerState] = Map()
   var energies: Map[ActorRef, EnergyState] = Map()
@@ -168,7 +170,7 @@ class Region(width: Int, height: Int, frontier: Int)(journal: ActorRef, bridge: 
   }
 
   private def manageVirtualPlayer(player: ActorRef, state: PlayerState): Boolean = {
-    val inFrontier = isInFrontier(state.position)
+    val inFrontier = isInFrontier(state.position, state.weight)
 
     (state.virtual, inFrontier) match {
       case (true, true) =>
@@ -176,7 +178,7 @@ class Region(width: Int, height: Int, frontier: Int)(journal: ActorRef, bridge: 
       case (false, true) =>
         bridge ! Virtual(RegisterPlayer(player, state))
       case (true, false) =>
-        if (isInRegion(state.position)) {
+        if (isInRegion(state.position, state.weight)) {
           bridge ! Virtual(Destroy(player))
         } else {
           context.stop(player)
@@ -184,7 +186,7 @@ class Region(width: Int, height: Int, frontier: Int)(journal: ActorRef, bridge: 
         }
       case (false, false) =>
         // Small frontier isn't it?
-        if (!isInRegion(state.position)) {
+        if (!isInRegion(state.position, state.weight)) {
           context.stop(player)
           bridge ! Virtual(CreatePlayer(state))
         }
@@ -194,7 +196,7 @@ class Region(width: Int, height: Int, frontier: Int)(journal: ActorRef, bridge: 
   }
 
   private def manageVirtualEnergy(energy: ActorRef, state: EnergyState): Boolean = {
-    val inFrontier = isInFrontier(state.position)
+    val inFrontier = isInFrontier(state.position, state.value)
 
     if (inFrontier) {
       bridge ! Virtual(RegisterEnergy(energy, state))
@@ -228,26 +230,31 @@ class Region(width: Int, height: Int, frontier: Int)(journal: ActorRef, bridge: 
       }.toMap
   }
 
-  private def generatePosition(r: Random) = {
-    val partition = 7000
-
-    Vector2d(r.nextInt(partition) * width / partition, r.nextInt(partition) * height / partition)
-  }
-
   private def createNewPlayer(position: Vector2d, weight: Int): ActorRef = {
-    context.actorOf(Player.props(position, weight)(self))
+    context.actorOf(Player.props(worldSquare, position, weight)(self))
   }
 
   private def createNewEnergy(valueOfEnergy: Int): ActorRef = {
     context.actorOf(Energy.props(valueOfEnergy)(self))
   }
 
-  private def isInRegion(position: Vector2d): Boolean = {
-    height / Math.abs(height) * position.y > -frontier
+  //
+  // Position management
+  //
+
+  private def generatePosition(r: Random) = {
+    Vector2d(
+      r.nextDouble() * Algorithm.height(regionSquare),
+      r.nextDouble() * Algorithm.width(regionSquare)
+    )
   }
 
-  private def isInFrontier(position: Vector2d): Boolean = {
-    -frontier < position.y && position.y < frontier
+  private def isInRegion(position: Vector2d, weight: Int): Boolean = {
+    Algorithm.isInSquare(position, weight, regionSquare)
+  }
+
+  private def isInFrontier(position: Vector2d, weight: Int): Boolean = {
+    Algorithm.isInSquare(position, weight, frontierSquare)
   }
 
 }
