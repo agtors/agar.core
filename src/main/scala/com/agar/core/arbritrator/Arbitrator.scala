@@ -98,6 +98,7 @@ class Arbitrator(region: ActorRef)(implicit agarSystem: AgarSystem) extends Acto
       } { _ =>
         region ! Move(sender, position, weight)
         players + (sender -> Ended)
+
       }
 
       context become inProgressGameTurn(newPlayers)

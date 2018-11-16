@@ -3,6 +3,7 @@ package com.agar.core.logger
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Directives.{handleWebSocketMessages, path}
+import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
 import com.agar.core.gameplay.player.deco._
 import com.agar.core.gameplay.player.{EnergyInfos, PlayerInfos}
@@ -17,7 +18,7 @@ import scala.util.{Failure, Success}
 
 object Journal {
 
-  def props(implicit system: ActorSystem): Props = Props(new Journal(system))
+  def props(host: String, port: Int)(implicit system: ActorSystem): Props = Props(new Journal(host, port)(system))
 
   final case class WorldState(players: Map[ActorRef, PlayerState], energies: Map[ActorRef, EnergyState])
 
@@ -29,15 +30,15 @@ object Journal {
 // TODO: Store the logs/event in a database with JDBC connector
 class Journal extends Actor with ActorLogging {
 
-  implicit val materializer = ActorMaterializer()
+  implicit val materializer: ActorMaterializer = ActorMaterializer()
 
-  val route = path("ws") {
+  val route: Route = path("ws") {
     handleWebSocketMessages(WebSocket.listen())
   }
 
-  def this(system: ActorSystem) {
+  def this(host: String, port: Int)(system: ActorSystem) {
     this()
-    Http()(system).bindAndHandle(route, "127.0.0.1", 8000).onComplete {
+    Http()(system).bindAndHandle(route, host, port).onComplete {
       case Success(binding) => log.info(s"Listening on ${binding.localAddress.getHostString}:${binding.localAddress.getPort}.")
       case Failure(exception) => throw exception
     }

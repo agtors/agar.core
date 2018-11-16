@@ -191,7 +191,7 @@ class Player(var position: Vector2d, var weight: Int, var activeState: List[Stat
       .sortBy(p => p.position.euclideanDistance(position))
       .headOption
 
-  //TODO: We cloud provide an AOI already ordered ?
+  //TODO: We could provide an AOI already ordered ?
   private def getPositionOfTheNearestDangerousPlayerInThreatRadius(players: List[PlayerInfos]): Option[PlayerInfos] =
     players
       .filter(p => canEat(p.weight, this.weight))

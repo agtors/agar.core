@@ -10,6 +10,7 @@ import com.agar.core.utils.Vector2d
 import org.scalatest.{Matchers, WordSpecLike}
 
 import scala.concurrent.duration._
+import scala.language.postfixOps
 
 class PlayerSpec(_system: ActorSystem)
   extends TestKit(_system)

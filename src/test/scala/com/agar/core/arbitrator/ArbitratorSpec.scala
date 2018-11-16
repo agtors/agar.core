@@ -7,20 +7,19 @@ import com.agar.core.arbritrator.Protocol.{AOISet, MovePlayer, StartGameTurn}
 import com.agar.core.context.AgarSystem
 import com.agar.core.gameplay.player.AOI
 import com.agar.core.gameplay.player.Player.Tick
-import com.agar.core.region.Protocol.{Destroy, GetEntitiesAOISet, Killed, Move}
+import com.agar.core.region.Protocol.{GetEntitiesAOISet, Killed, Move}
 import com.agar.core.utils.Vector2d
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
-//#test-classes
+
 class ArbitratorSpec(_system: ActorSystem)
   extends TestKit(_system)
     with Matchers
     with WordSpecLike
     with BeforeAndAfterAll {
-  //#test-classes
 
   def this() = this(ActorSystem("AgarSpec"))
 
