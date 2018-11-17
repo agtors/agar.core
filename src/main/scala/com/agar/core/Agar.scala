@@ -99,10 +99,7 @@ object Agar extends App {
 
   private def createRegion(single: Boolean, regionName: String, regionConfig: Config, journal: ActorRef, bridge: ActorRef)(implicit system: ActorSystem) = {
     val (worldSquare, regionSquare, frontierSquare) = getBoundaries(single, regionName, regionConfig)
-    Tracer.trace(system.actorOf(Region.props(worldSquare, regionSquare, frontierSquare)(journal, bridge), "region"), {
-      case Virtual(_) => true
-      case _ => true
-    })
+    system.actorOf(Region.props(worldSquare, regionSquare, frontierSquare)(journal, bridge), "region")
   }
 
   private def getBoundaries(single: Boolean, regionName: String, regionConfig: Config) = {

@@ -6,7 +6,7 @@ object RegionBoundaries {
   def apply(minX: Double, minY: Double, maxX: Double, maxY: Double): RegionBoundaries = new RegionBoundaries(minX, minY, maxX, maxY)
 }
 
-class RegionBoundaries(minX: Double, minY: Double, maxX: Double, maxY: Double) {
+class RegionBoundaries(val minX: Double, val minY: Double, val maxX: Double, val maxY: Double) {
 
   def width: Double = maxX - minX
 

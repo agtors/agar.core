@@ -137,29 +137,35 @@ class Region(worldSquare: RegionBoundaries, regionSquare: RegionBoundaries, fron
 
     // Virtual messages reification
 
-    case Virtual(CreatePlayer(state)) =>
+    case e@Virtual(CreatePlayer(state)) =>
+      println(e)
       val player = createNewPlayer(state.position, state.weight)
       players = players + (player -> state.virtual(false))
 
-    case Virtual(RegisterPlayer(p, s)) =>
+    case e@Virtual(RegisterPlayer(p, s)) =>
+      println(e)
       virtualPlayers = virtualPlayers + (p -> s)
 
-    case Virtual(RegisterEnergy(p, s)) =>
+    case e@Virtual(RegisterEnergy(p, s)) =>
+      println(e)
       virtualEnergies = virtualEnergies + (p -> s)
 
-    case Virtual(Move(player, position, weight)) =>
+    case e@Virtual(Move(player, position, weight)) =>
+      println(e)
       virtualPlayers = virtualPlayers.get(player).fold {
         virtualPlayers
       } { s =>
         virtualPlayers + (player -> PlayerState(position, weight, s.velocity))
       }
 
-    case Virtual(Killed(player)) =>
+    case e@Virtual(Killed(player)) =>
+      println(e)
       virtualPlayers = virtualPlayers.filterKeys {
         player != _
       }
 
-    case Virtual(Destroy(entity)) =>
+    case e@Virtual(Destroy(entity)) =>
+      println(e)
       virtualPlayers = virtualPlayers.filterKeys {
         entity != _
       }
@@ -244,8 +250,8 @@ class Region(worldSquare: RegionBoundaries, regionSquare: RegionBoundaries, fron
 
   private def generatePosition(r: Random) = {
     Vector2d(
-      r.nextDouble() * regionSquare.height,
-      r.nextDouble() * regionSquare.width
+      r.nextDouble() * regionSquare.height + regionSquare.minX,
+      r.nextDouble() * regionSquare.width + regionSquare.minY
     )
   }
 
