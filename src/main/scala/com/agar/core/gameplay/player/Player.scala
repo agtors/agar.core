@@ -30,7 +30,7 @@ object Player {
 
   case object TryKill
 
-  case object KilledPlayer
+  case class Consumed(value: Int)
 
 }
 
@@ -62,6 +62,9 @@ class Player(worldSquare: RegionBoundaries, var position: Vector2d, var weight: 
     case TryKill =>
       region ! Killed(self)
       context become killed
+
+    case Consumed(value) =>
+      weight += value
   }
 
   def killed: Receive = {

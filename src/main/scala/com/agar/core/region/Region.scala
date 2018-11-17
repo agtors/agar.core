@@ -52,7 +52,7 @@ object Protocol {
 
   case class Destroy(player: ActorRef)
 
-  case class Virtual(event: Any) // ^^ TODO(didier) Define a upper bound type
+  case class Virtual(event: Any) // TODO(didier) Define an upper bound type
 
 }
 
@@ -84,12 +84,7 @@ class Region(worldSquare: RegionBoundaries, regionSquare: RegionBoundaries, fron
   def initialized: Receive = {
     case GetEntitiesAOISet =>
       journal ! WorldState(players, energies)
-      sender ! AOISet(AreaOfInterest.getPlayersAOISet(
-        players,
-        virtualPlayers,
-        energies,
-        virtualEnergies)
-      )
+      sender ! AOISet(AreaOfInterest.getPlayersAOISet(players, virtualPlayers, energies, virtualEnergies))
 
     case CreatePlayer(state) =>
       val player = createNewPlayer(state.position, state.weight)
@@ -119,7 +114,6 @@ class Region(worldSquare: RegionBoundaries, regionSquare: RegionBoundaries, fron
 
         val energy = createNewEnergy(s.weight)
         val state = EnergyState(s.position, s.weight)
-
         val virtual = manageVirtualEnergy(energy, state)
 
         energies = energies + (energy -> state.virtual(virtual))
@@ -144,20 +138,16 @@ class Region(worldSquare: RegionBoundaries, regionSquare: RegionBoundaries, fron
     // Virtual messages reification
 
     case e@Virtual(CreatePlayer(state)) =>
-      println(e)
       val player = createNewPlayer(state.position, state.weight)
       players = players + (player -> state.virtual(false))
 
     case e@Virtual(RegisterPlayer(p, s)) =>
-      println(e)
       virtualPlayers = virtualPlayers + (p -> s)
 
     case e@Virtual(RegisterEnergy(p, s)) =>
-      println(e)
       virtualEnergies = virtualEnergies + (p -> s)
 
     case e@Virtual(Move(player, position, weight)) =>
-      println(e)
       virtualPlayers = virtualPlayers.get(player).fold {
         virtualPlayers
       } { s =>
@@ -165,15 +155,11 @@ class Region(worldSquare: RegionBoundaries, regionSquare: RegionBoundaries, fron
       }
 
     case e@Virtual(Killed(player)) =>
-      println(e)
-
       virtualPlayers = virtualPlayers.filterKeys {
         player != _
       }
 
     case e@Virtual(Destroy(entity)) =>
-      println(e)
-
       virtualPlayers = virtualPlayers.filterKeys {
         entity != _
       }
@@ -264,11 +250,11 @@ class Region(worldSquare: RegionBoundaries, regionSquare: RegionBoundaries, fron
   }
 
   private def isInRegion(position: Vector2d, weight: Int): Boolean = {
-    regionSquare.intersect(position, weight)
+    regionSquare.intersect(position, weight/2)
   }
 
   private def isInFrontier(position: Vector2d, weight: Int): Boolean = {
-    frontierSquare.intersect(position, weight)
+    frontierSquare.intersect(position, weight/2)
   }
 
 }

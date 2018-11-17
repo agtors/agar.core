@@ -6,8 +6,9 @@ import com.agar.core.arbritrator.Protocol.StartGameTurn
 import com.agar.core.cluster.{AgarCluster, Bridge}
 import com.agar.core.context.AgarSystem
 import com.agar.core.logger.Journal
-import com.agar.core.region.Protocol.InitRegion
+import com.agar.core.region.Protocol.{InitRegion, Virtual}
 import com.agar.core.region.Region
+import com.agar.core.tracer.Tracer
 import com.agar.core.utils.RegionBoundaries
 import com.typesafe.config.{Config, ConfigFactory}
 
@@ -98,8 +99,10 @@ object Agar extends App {
 
   private def createRegion(single: Boolean, regionName: String, regionConfig: Config, journal: ActorRef, bridge: ActorRef)(implicit system: ActorSystem) = {
     val (worldSquare, regionSquare, frontierSquare) = getBoundaries(single, regionName, regionConfig)
-    val region = system.actorOf(Region.props(worldSquare, regionSquare, frontierSquare)(journal, bridge), "region")
-    region
+    Tracer.trace(system.actorOf(Region.props(worldSquare, regionSquare, frontierSquare)(journal, bridge), "region"), {
+      case Virtual(_) => true
+      case _ => false
+    })
   }
 
   private def getBoundaries(single: Boolean, regionName: String, regionConfig: Config) = {
