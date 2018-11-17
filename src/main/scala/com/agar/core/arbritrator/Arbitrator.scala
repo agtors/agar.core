@@ -5,7 +5,7 @@ import com.agar.core.arbritrator.PlayerStatus.{Ended, Running, Status}
 import com.agar.core.context.AgarSystem
 import com.agar.core.gameplay.player.AOI
 import com.agar.core.gameplay.player.Player.Tick
-import com.agar.core.region.Protocol.{GetEntitiesAOISet, Killed, Move}
+import com.agar.core.region.Protocol.{Destroy, GetEntitiesAOISet, Killed, Move}
 import com.agar.core.utils.Vector2d
 
 import scala.language.postfixOps
@@ -101,7 +101,7 @@ class Arbitrator(region: ActorRef)(implicit agarSystem: AgarSystem) extends Acto
 
     case TimeOutTurn =>
       runningPlayers(players).foreach { case (player, _) =>
-        region ! Killed(player)
+        region ! Destroy(player)
       }
 
       context become waitingForNewGameTurn

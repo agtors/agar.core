@@ -88,9 +88,9 @@ class Region(worldSquare: RegionBoundaries, regionSquare: RegionBoundaries, fron
 
     case CreatePlayer(state) =>
       val player = createNewPlayer(state.position, state.weight)
-      val virtual = manageVirtualPlayer(player, state)
+      val (maintain, virtual) = manageVirtualPlayer(player, state)
 
-      players = players + (player -> state.virtual(virtual))
+      if (maintain) players = players + (player -> state.virtual(virtual))
 
     case CreateEnergy(state) =>
       val energy = createNewEnergy(state.value)
@@ -103,9 +103,12 @@ class Region(worldSquare: RegionBoundaries, regionSquare: RegionBoundaries, fron
         players
       } { s =>
         val state = PlayerState(position, weight, s.velocity, s.virtual)
-        val virtual = manageVirtualPlayer(player, state)
+        val (maintain, virtual) = manageVirtualPlayer(player, state)
 
-        players + (player -> state.virtual(virtual))
+        if (maintain)
+          players + (player -> state.virtual(virtual))
+        else
+          players
       }
 
     case e@Killed(player) =>
@@ -175,30 +178,38 @@ class Region(worldSquare: RegionBoundaries, regionSquare: RegionBoundaries, fron
       }
   }
 
-  private def manageVirtualPlayer(player: ActorRef, state: PlayerState): Boolean = {
+  private def manageVirtualPlayer(player: ActorRef, state: PlayerState): (Boolean, Boolean) = {
     val inFrontier = isInFrontier(state.position, state.weight)
 
     (state.virtual, inFrontier) match {
       case (true, true) =>
         bridge ! Virtual(Move(player, state.position, state.weight))
+        (true, true)
       case (false, true) =>
+        // Enter the frontier
         bridge ! Virtual(RegisterPlayer(player, state))
+        (true, true)
       case (true, false) =>
         if (isInRegion(state.position, state.weight)) {
+          // Leave the frontier - Stay in the region
           bridge ! Virtual(Destroy(player))
+          (true, false)
         } else {
+          // Leave the frontier - Leave the region
           context.stop(player)
           bridge ! Virtual(CreatePlayer(state))
+          (false, false)
         }
       case (false, false) =>
         // Small frontier isn't it?
         if (!isInRegion(state.position, state.weight)) {
           context.stop(player)
           bridge ! Virtual(CreatePlayer(state))
+          (false, false)
+        } else {
+          (true, false)
         }
     }
-
-    inFrontier
   }
 
   private def manageVirtualEnergy(energy: ActorRef, state: EnergyState): Boolean = {
@@ -219,7 +230,7 @@ class Region(worldSquare: RegionBoundaries, regionSquare: RegionBoundaries, fron
         val position: Vector2d = generatePosition(r)
         val player = createNewPlayer(position, WEIGHT_AT_START)
         val state = PlayerState(position, WEIGHT_AT_START, DEFAULT_VELOCITY)
-        val virtual = manageVirtualPlayer(player, state)
+        val (virtual, _) = manageVirtualPlayer(player, state)
 
         player -> state.virtual(virtual)
       }.toMap
@@ -256,11 +267,11 @@ class Region(worldSquare: RegionBoundaries, regionSquare: RegionBoundaries, fron
   }
 
   private def isInRegion(position: Vector2d, weight: Double): Boolean = {
-    regionSquare.intersect(position, weight/2)
+    regionSquare.intersect(position, weight / 2)
   }
 
   private def isInFrontier(position: Vector2d, weight: Double): Boolean = {
-    frontierSquare.intersect(position, weight/2)
+    frontierSquare.intersect(position, weight / 2)
   }
 
 }
