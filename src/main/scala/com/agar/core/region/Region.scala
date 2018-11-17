@@ -57,11 +57,11 @@ object Protocol {
 }
 
 trait Constants {
-  def MAX_ENERGY_VALUE = 50
+  def MAX_ENERGY_VALUE = 2
 
   def DEFAULT_VELOCITY = Vector2d(2, 2)
 
-  def WEIGHT_AT_START = 10
+  def WEIGHT_AT_START = 5
 }
 
 class Region(worldSquare: RegionBoundaries, regionSquare: RegionBoundaries, frontierSquare: RegionBoundaries)(journal: ActorRef, bridge: ActorRef) extends Actor with Stash with ActorLogging with Constants {
@@ -137,29 +137,29 @@ class Region(worldSquare: RegionBoundaries, regionSquare: RegionBoundaries, fron
 
     // Virtual messages reification
 
-    case e@Virtual(CreatePlayer(state)) =>
+    case Virtual(CreatePlayer(state)) =>
       val player = createNewPlayer(state.position, state.weight)
       players = players + (player -> state.virtual(false))
 
-    case e@Virtual(RegisterPlayer(p, s)) =>
+    case Virtual(RegisterPlayer(p, s)) =>
       virtualPlayers = virtualPlayers + (p -> s)
 
-    case e@Virtual(RegisterEnergy(p, s)) =>
+    case Virtual(RegisterEnergy(p, s)) =>
       virtualEnergies = virtualEnergies + (p -> s)
 
-    case e@Virtual(Move(player, position, weight)) =>
+    case Virtual(Move(player, position, weight)) =>
       virtualPlayers = virtualPlayers.get(player).fold {
         virtualPlayers
       } { s =>
         virtualPlayers + (player -> PlayerState(position, weight, s.velocity))
       }
 
-    case e@Virtual(Killed(player)) =>
+    case Virtual(Killed(player)) =>
       virtualPlayers = virtualPlayers.filterKeys {
         player != _
       }
 
-    case e@Virtual(Destroy(entity)) =>
+    case Virtual(Destroy(entity)) =>
       virtualPlayers = virtualPlayers.filterKeys {
         entity != _
       }
@@ -249,11 +249,11 @@ class Region(worldSquare: RegionBoundaries, regionSquare: RegionBoundaries, fron
     )
   }
 
-  private def isInRegion(position: Vector2d, weight: Int): Boolean = {
+  private def isInRegion(position: Vector2d, weight: Double): Boolean = {
     regionSquare.intersect(position, weight/2)
   }
 
-  private def isInFrontier(position: Vector2d, weight: Int): Boolean = {
+  private def isInFrontier(position: Vector2d, weight: Double): Boolean = {
     frontierSquare.intersect(position, weight/2)
   }
 

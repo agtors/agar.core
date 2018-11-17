@@ -101,7 +101,7 @@ object Agar extends App {
     val (worldSquare, regionSquare, frontierSquare) = getBoundaries(single, regionName, regionConfig)
     Tracer.trace(system.actorOf(Region.props(worldSquare, regionSquare, frontierSquare)(journal, bridge), "region"), {
       case Virtual(_) => true
-      case _ => false
+      case _ => true
     })
   }
 
