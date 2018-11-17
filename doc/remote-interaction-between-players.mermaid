@@ -1,17 +1,16 @@
 sequenceDiagram
     participant Journal
     participant Region1
-    participant Arbitre1
+    participant Arbitre
     participant Player
-    participant Virtual
     participant Bridge
-    participant Arbitre2
     participant Region2
 
+
 Region1  ->>  Journal:Set(AOI)
-Region1  ->>  Arbitre1:Set(P*AOI)
-Arbitre1 ->>  Player:Tick(AOI)
-Player   -->> Arbitre1: MovedPlayer(Position*Weight)
-Arbitre1 -->> Region1:Moved(Player*Position*Weight)
-Arbitre1 ->>  Bridge:Moved(Player*Position*Weight)
-Bridge   ->>  Region2:Moved(Player*Position*Weight)
+Region1  ->>  Arbitre:Set(P*AOI)
+Arbitre  ->>  Player:Tick(AOI)
+Player   -->> Arbitre:MovedPlayer(Position*Weight)
+Arbitre  -->> Region1:Moved(Player*Position*Weight)
+Region1  ->>  Bridge:Virtual(Moved(Player*Position*Weight))
+Bridge   ->>  Region2:Virtual(Moved(Player*Position*Weight))
