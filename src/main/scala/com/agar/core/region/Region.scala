@@ -8,7 +8,7 @@ import com.agar.core.gameplay.player.{AreaOfInterest, Player}
 import com.agar.core.logger.Journal.WorldState
 import com.agar.core.region.Protocol._
 import com.agar.core.region.State.{EnergyState, PlayerState}
-import com.agar.core.utils.Vector2d
+import com.agar.core.utils.{RegionBoundaries, Vector2d}
 
 import scala.util.Random
 
@@ -25,7 +25,9 @@ object State {
 }
 
 object Region {
-  def props(width: Int, height: Int, frontier: Int)(journal: ActorRef, bridge: ActorRef): Props = Props(new Region(width, height, frontier)(journal, bridge))
+  def props(worldSquare: RegionBoundaries, regionSquare: RegionBoundaries, frontierSquare: RegionBoundaries)
+           (journal: ActorRef, bridge: ActorRef): Props =
+    Props(new Region(worldSquare, regionSquare, frontierSquare)(journal, bridge))
 }
 
 object Protocol {
@@ -50,19 +52,19 @@ object Protocol {
 
   case class Destroy(player: ActorRef)
 
-  case class Virtual(event: Any) // ^^ TODO(didier) Define a upper bound type
+  case class Virtual(event: Any) // TODO(didier) Define an upper bound type
 
 }
 
 trait Constants {
-  def MAX_ENERGY_VALUE = 10
+  def MAX_ENERGY_VALUE = 2
 
   def DEFAULT_VELOCITY = Vector2d(2, 2)
 
-  def WEIGHT_AT_START = 1
+  def WEIGHT_AT_START = 5
 }
 
-class Region(width: Int, height: Int, frontier: Int)(journal: ActorRef, bridge: ActorRef) extends Actor with Stash with ActorLogging with Constants {
+class Region(worldSquare: RegionBoundaries, regionSquare: RegionBoundaries, frontierSquare: RegionBoundaries)(journal: ActorRef, bridge: ActorRef) extends Actor with Stash with ActorLogging with Constants {
 
   var players: Map[ActorRef, PlayerState] = Map()
   var energies: Map[ActorRef, EnergyState] = Map()
@@ -86,9 +88,9 @@ class Region(width: Int, height: Int, frontier: Int)(journal: ActorRef, bridge: 
 
     case CreatePlayer(state) =>
       val player = createNewPlayer(state.position, state.weight)
-      val virtual = manageVirtualPlayer(player, state)
+      val (maintain, virtual) = manageVirtualPlayer(player, state)
 
-      players = players + (player -> state.virtual(virtual))
+      if (maintain) players = players + (player -> state.virtual(virtual))
 
     case CreateEnergy(state) =>
       val energy = createNewEnergy(state.value)
@@ -96,14 +98,17 @@ class Region(width: Int, height: Int, frontier: Int)(journal: ActorRef, bridge: 
 
       energies = energies + (energy -> state.virtual(virtual))
 
-    case Move(player, position, weight) =>
+    case e@Move(player, position, weight) =>
       players = players.get(player).fold {
         players
       } { s =>
         val state = PlayerState(position, weight, s.velocity, s.virtual)
-        val virtual = manageVirtualPlayer(player, state)
+        val (maintain, virtual) = manageVirtualPlayer(player, state)
 
-        players + (player -> state.virtual(virtual))
+        if (maintain)
+          players + (player -> state.virtual(virtual))
+        else
+          players
       }
 
     case e@Killed(player) =>
@@ -112,10 +117,9 @@ class Region(width: Int, height: Int, frontier: Int)(journal: ActorRef, bridge: 
 
         val energy = createNewEnergy(s.weight)
         val state = EnergyState(s.position, s.weight)
+        val virtual = manageVirtualEnergy(energy, state)
 
-        manageVirtualEnergy(energy, state)
-
-        energies = energies + (energy -> state)
+        energies = energies + (energy -> state.virtual(virtual))
         context.stop(player)
       }
 
@@ -136,65 +140,80 @@ class Region(width: Int, height: Int, frontier: Int)(journal: ActorRef, bridge: 
 
     // Virtual messages reification
 
-    case Virtual(CreatePlayer(state)) =>
+    case e@Virtual(CreatePlayer(state)) =>
+      println(e)
       val player = createNewPlayer(state.position, state.weight)
       players = players + (player -> state.virtual(false))
 
-    case Virtual(RegisterPlayer(p, s)) =>
+    case e@Virtual(RegisterPlayer(p, s)) =>
+      println(e)
       virtualPlayers = virtualPlayers + (p -> s)
 
-    case Virtual(RegisterEnergy(p, s)) =>
+    case e@Virtual(RegisterEnergy(p, s)) =>
+      println(e)
       virtualEnergies = virtualEnergies + (p -> s)
 
-    case Virtual(Move(player, position, weight)) =>
+    case e@Virtual(Move(player, position, weight)) =>
+      println(e)
       virtualPlayers = virtualPlayers.get(player).fold {
         virtualPlayers
       } { s =>
         virtualPlayers + (player -> PlayerState(position, weight, s.velocity))
       }
 
-    case Virtual(Killed(player)) =>
+    case e@Virtual(Killed(player)) =>
+      println(e)
       virtualPlayers = virtualPlayers.filterKeys {
         player != _
       }
 
-    case Virtual(Destroy(entity)) =>
+    case e@Virtual(Destroy(entity)) =>
+      println(e)
       virtualPlayers = virtualPlayers.filterKeys {
         entity != _
       }
+
       virtualEnergies = virtualEnergies.filterKeys {
         entity != _
       }
   }
 
-  private def manageVirtualPlayer(player: ActorRef, state: PlayerState): Boolean = {
-    val inFrontier = isInFrontier(state.position)
+  private def manageVirtualPlayer(player: ActorRef, state: PlayerState): (Boolean, Boolean) = {
+    val inFrontier = isInFrontier(state.position, state.weight)
 
     (state.virtual, inFrontier) match {
       case (true, true) =>
         bridge ! Virtual(Move(player, state.position, state.weight))
+        (true, true)
       case (false, true) =>
+        // Enter the frontier
         bridge ! Virtual(RegisterPlayer(player, state))
+        (true, true)
       case (true, false) =>
-        if (isInRegion(state.position)) {
+        if (isInRegion(state.position, state.weight)) {
+          // Leave the frontier - Stay in the region
           bridge ! Virtual(Destroy(player))
+          (true, false)
         } else {
+          // Leave the frontier - Leave the region
           context.stop(player)
           bridge ! Virtual(CreatePlayer(state))
+          (false, false)
         }
       case (false, false) =>
         // Small frontier isn't it?
-        if (!isInRegion(state.position)) {
+        if (!isInRegion(state.position, state.weight)) {
           context.stop(player)
           bridge ! Virtual(CreatePlayer(state))
+          (false, false)
+        } else {
+          (true, false)
         }
     }
-
-    inFrontier
   }
 
   private def manageVirtualEnergy(energy: ActorRef, state: EnergyState): Boolean = {
-    val inFrontier = isInFrontier(state.position)
+    val inFrontier = isInFrontier(state.position, state.value)
 
     if (inFrontier) {
       bridge ! Virtual(RegisterEnergy(energy, state))
@@ -211,7 +230,7 @@ class Region(width: Int, height: Int, frontier: Int)(journal: ActorRef, bridge: 
         val position: Vector2d = generatePosition(r)
         val player = createNewPlayer(position, WEIGHT_AT_START)
         val state = PlayerState(position, WEIGHT_AT_START, DEFAULT_VELOCITY)
-        val virtual = manageVirtualPlayer(player, state)
+        val (virtual, _) = manageVirtualPlayer(player, state)
 
         player -> state.virtual(virtual)
       }.toMap
@@ -228,26 +247,31 @@ class Region(width: Int, height: Int, frontier: Int)(journal: ActorRef, bridge: 
       }.toMap
   }
 
-  private def generatePosition(r: Random) = {
-    val partition = 7000
-
-    Vector2d(r.nextInt(partition) * width / partition, r.nextInt(partition) * height / partition)
-  }
-
   private def createNewPlayer(position: Vector2d, weight: Int): ActorRef = {
-    context.actorOf(Player.props(position, weight)(self))
+    context.actorOf(Player.props(worldSquare, position, weight)(self))
   }
 
   private def createNewEnergy(valueOfEnergy: Int): ActorRef = {
     context.actorOf(Energy.props(valueOfEnergy)(self))
   }
 
-  private def isInRegion(position: Vector2d): Boolean = {
-    height / Math.abs(height) * position.y > -frontier
+  //
+  // Position management
+  //
+
+  private def generatePosition(r: Random) = {
+    Vector2d(
+      r.nextDouble() * regionSquare.height + regionSquare.minX,
+      r.nextDouble() * regionSquare.width + regionSquare.minY
+    )
   }
 
-  private def isInFrontier(position: Vector2d): Boolean = {
-    -frontier < position.y && position.y < frontier
+  private def isInRegion(position: Vector2d, weight: Double): Boolean = {
+    regionSquare.intersect(position, weight / 2)
+  }
+
+  private def isInFrontier(position: Vector2d, weight: Double): Boolean = {
+    frontierSquare.intersect(position, weight / 2)
   }
 
 }

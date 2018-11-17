@@ -7,7 +7,7 @@ import com.agar.core.gameplay.Behavior.TargetEntity
 import com.agar.core.gameplay.energy.Energy.TryConsume
 import com.agar.core.gameplay.player.Player.{CollectEnergy, State}
 import com.agar.core.region.Protocol.Killed
-import com.agar.core.utils.Vector2d
+import com.agar.core.utils.{RegionBoundaries, Vector2d}
 
 object Player {
 
@@ -24,17 +24,17 @@ object Player {
 
   case object Wander extends State
 
-  def props(position: Vector2d, weight: Int)(region: ActorRef): Props = Props(new Player(position, weight)(region))
+  def props(worldSquare: RegionBoundaries, position: Vector2d, weight: Int)(region: ActorRef): Props = Props(new Player(worldSquare, position, weight)(region))
 
   case class Tick(aoi: AOI)
 
   case object TryKill
 
-  case object KilledPlayer
+  case class Consumed(value: Int)
 
 }
 
-class Player(var position: Vector2d, var weight: Int, var activeState: List[State] = List(CollectEnergy))(region: ActorRef) extends Actor {
+class Player(worldSquare: RegionBoundaries, var position: Vector2d, var weight: Int, var activeState: List[State] = List(CollectEnergy))(region: ActorRef) extends Actor {
 
   import com.agar.core.gameplay.player.Player._
 
@@ -62,6 +62,9 @@ class Player(var position: Vector2d, var weight: Int, var activeState: List[Stat
     case TryKill =>
       region ! Killed(self)
       context become killed
+
+    case Consumed(value) =>
+      weight += value
   }
 
   def killed: Receive = {
@@ -173,15 +176,11 @@ class Player(var position: Vector2d, var weight: Int, var activeState: List[Stat
 
   private def moveBasedOnVelocity(steering: Vector2d): Unit = {
     this.velocity = truncateAt(velocity + steering, MAX_VELOCITY)
-    this.position = position + velocity
-    //this.regionActor ! Move(this.position)
+    this.position = worldSquare.clamp(position + velocity)
   }
 
   private def truncateAt(v: Vector2d, n: Double): Vector2d = {
-    // TODO -- Remove these side effects
-    if (v.x > MAX_VELOCITY) v.x = n
-    if (v.y > MAX_VELOCITY) v.y = n
-    v
+    Vector2d(if (v.x > MAX_VELOCITY) n else v.x, if (v.y > MAX_VELOCITY) n else v.y)
   }
 
   //TODO: We could provide an AOI already ordered ?

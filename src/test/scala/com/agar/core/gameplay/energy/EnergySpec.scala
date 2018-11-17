@@ -2,7 +2,8 @@ package com.agar.core.gameplay.energy
 
 import akka.actor.ActorSystem
 import akka.testkit.{ImplicitSender, TestKit, TestProbe}
-import com.agar.core.gameplay.energy.Energy.{Consumed, TryConsume}
+import com.agar.core.gameplay.energy.Energy.TryConsume
+import com.agar.core.gameplay.player.Player.Consumed
 import com.agar.core.region.Protocol.Destroy
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
