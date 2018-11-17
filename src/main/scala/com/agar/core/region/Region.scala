@@ -4,7 +4,7 @@ package com.agar.core.region
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import com.agar.core.arbritrator.Protocol.AOISet
 import com.agar.core.gameplay.energy.Energy
-import com.agar.core.gameplay.player.{AreaOfInterest, Player, VirtualPlayer}
+import com.agar.core.gameplay.player.{AreaOfInterest, Player}
 import com.agar.core.logger.Journal.WorldState
 import com.agar.core.region.Protocol._
 import com.agar.core.region.State.{EnergyState, PlayerState}
@@ -84,7 +84,12 @@ class Region(worldSquare: RegionBoundaries, regionSquare: RegionBoundaries, fron
   def initialized: Receive = {
     case GetEntitiesAOISet =>
       journal ! WorldState(players, energies)
-      sender ! AOISet(AreaOfInterest.getPlayersAOISet(players, virtualPlayers, energies, virtualEnergies))
+      sender ! AOISet(AreaOfInterest.getPlayersAOISet(
+        players,
+        virtualPlayers,
+        energies,
+        virtualEnergies)
+      )
 
     case CreatePlayer(state) =>
       val player = createNewPlayer(state.position, state.weight)
@@ -98,7 +103,7 @@ class Region(worldSquare: RegionBoundaries, regionSquare: RegionBoundaries, fron
 
       energies = energies + (energy -> state.virtual(virtual))
 
-    case Move(player, position, weight) =>
+    case e@Move(player, position, weight) =>
       players = players.get(player).fold {
         players
       } { s =>
@@ -115,9 +120,9 @@ class Region(worldSquare: RegionBoundaries, regionSquare: RegionBoundaries, fron
         val energy = createNewEnergy(s.weight)
         val state = EnergyState(s.position, s.weight)
 
-        manageVirtualEnergy(energy, state)
+        val virtual = manageVirtualEnergy(energy, state)
 
-        energies = energies + (energy -> state)
+        energies = energies + (energy -> state.virtual(virtual))
         context.stop(player)
       }
 
@@ -126,7 +131,6 @@ class Region(worldSquare: RegionBoundaries, regionSquare: RegionBoundaries, fron
       }
 
     case e@Destroy(energy) =>
-      println(e)
       energies.get(energy).foreach { s =>
         if (s.virtual) bridge ! Virtual(e)
 
@@ -162,15 +166,18 @@ class Region(worldSquare: RegionBoundaries, regionSquare: RegionBoundaries, fron
 
     case e@Virtual(Killed(player)) =>
       println(e)
+
       virtualPlayers = virtualPlayers.filterKeys {
         player != _
       }
 
     case e@Virtual(Destroy(entity)) =>
       println(e)
+
       virtualPlayers = virtualPlayers.filterKeys {
         entity != _
       }
+
       virtualEnergies = virtualEnergies.filterKeys {
         entity != _
       }
@@ -239,10 +246,6 @@ class Region(worldSquare: RegionBoundaries, regionSquare: RegionBoundaries, fron
 
   private def createNewPlayer(position: Vector2d, weight: Int): ActorRef = {
     context.actorOf(Player.props(worldSquare, position, weight)(self))
-  }
-
-  private def createNewVirtualPlayer(position: Vector2d, weight: Int): ActorRef = {
-    context.actorOf(VirtualPlayer.props(bridge))
   }
 
   private def createNewEnergy(valueOfEnergy: Int): ActorRef = {

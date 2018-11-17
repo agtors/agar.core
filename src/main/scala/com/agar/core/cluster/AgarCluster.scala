@@ -1,18 +1,16 @@
 package com.agar.core.cluster
 
-import akka.actor.{Actor, ActorLogging, ActorRef, Props}
+import akka.actor.{Actor, ActorLogging, Props}
 import akka.cluster.Cluster
 import akka.cluster.ClusterEvent._
 
 object AgarCluster {
 
-  def props(starter: () => Unit): Props = Props(new AgarCluster(starter))
-
-  case class FromBridge(event: Any)
+  def props(port: Int, starter: () => Unit): Props = Props(new AgarCluster(port, starter))
 
 }
 
-class AgarCluster(starter: () => Unit) extends Actor with ActorLogging {
+class AgarCluster(port: Int, starter: () => Unit) extends Actor with ActorLogging {
 
   val cluster = Cluster(context.system)
 
@@ -25,14 +23,13 @@ class AgarCluster(starter: () => Unit) extends Actor with ActorLogging {
   def receive: Receive = {
 
     case MemberUp(member) ⇒
-      if (member.address.port != self.path.address.port) {
-        log.info("Member is Up: {}", member.address)
+      if (member.address.port == Option(port)) {
         starter()
       }
     case UnreachableMember(member) ⇒
-      log.info("Member detected as unreachable: {}", member)
+      println("Member detected as unreachable: {}", member)
     case MemberRemoved(member, previousStatus) ⇒
-      log.info("Member is Removed: {} after {}", member.address, previousStatus)
+      println("Member is Removed: {} after {}", member.address, previousStatus)
     case _: MemberEvent ⇒ // ignore
 
   }

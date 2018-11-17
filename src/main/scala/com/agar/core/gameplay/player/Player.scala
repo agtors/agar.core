@@ -177,7 +177,7 @@ class Player(worldSquare: RegionBoundaries, var position: Vector2d, var weight: 
   }
 
   private def truncateAt(v: Vector2d, n: Double): Vector2d = {
-    Vector2d(if (v.x > MAX_VELOCITY) n else v.x, if (v.y > MAX_VELOCITY) v.y else n)
+    Vector2d(if (v.x > MAX_VELOCITY) n else v.x, if (v.y > MAX_VELOCITY) n else v.y)
   }
 
   //TODO: We could provide an AOI already ordered ?
