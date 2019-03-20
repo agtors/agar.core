@@ -6,9 +6,8 @@ import com.agar.core.arbritrator.Protocol.StartGameTurn
 import com.agar.core.cluster.{AgarCluster, Bridge}
 import com.agar.core.context.AgarSystem
 import com.agar.core.logger.Journal
-import com.agar.core.region.Protocol.{InitRegion, Virtual}
+import com.agar.core.region.Protocol.InitRegion
 import com.agar.core.region.Region
-import com.agar.core.tracer.Tracer
 import com.agar.core.utils.RegionBoundaries
 import com.typesafe.config.{Config, ConfigFactory}
 
@@ -131,4 +130,3 @@ object Agar extends App {
   }
 
 }
-

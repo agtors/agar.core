@@ -90,7 +90,9 @@ class Region(worldSquare: RegionBoundaries, regionSquare: RegionBoundaries, fron
       val player = createNewPlayer(state.position, state.weight)
       val (maintain, virtual) = manageVirtualPlayer(player, state)
 
-      if (maintain) players = players + (player -> state.virtual(virtual))
+      if (maintain) {
+        players = players + (player -> state.virtual(virtual))
+      }
 
     case CreateEnergy(state) =>
       val energy = createNewEnergy(state.value)
@@ -123,8 +125,8 @@ class Region(worldSquare: RegionBoundaries, regionSquare: RegionBoundaries, fron
         context.stop(player)
       }
 
-      players = players.filterKeys {
-        player != _
+      players = players.filter {
+        player != _._1
       }
 
     case e@Destroy(energy) =>
@@ -134,27 +136,23 @@ class Region(worldSquare: RegionBoundaries, regionSquare: RegionBoundaries, fron
         context.stop(energy)
       }
 
-      energies = energies.filterKeys {
-        energy != _
+      energies = energies.filter {
+        energy != _._1
       }
 
     // Virtual messages reification
 
     case e@Virtual(CreatePlayer(state)) =>
-      println(e)
       val player = createNewPlayer(state.position, state.weight)
       players = players + (player -> state.virtual(false))
 
     case e@Virtual(RegisterPlayer(p, s)) =>
-      println(e)
       virtualPlayers = virtualPlayers + (p -> s)
 
     case e@Virtual(RegisterEnergy(p, s)) =>
-      println(e)
       virtualEnergies = virtualEnergies + (p -> s)
 
     case e@Virtual(Move(player, position, weight)) =>
-      println(e)
       virtualPlayers = virtualPlayers.get(player).fold {
         virtualPlayers
       } { s =>
@@ -162,19 +160,17 @@ class Region(worldSquare: RegionBoundaries, regionSquare: RegionBoundaries, fron
       }
 
     case e@Virtual(Killed(player)) =>
-      println(e)
-      virtualPlayers = virtualPlayers.filterKeys {
-        player != _
+      virtualPlayers = virtualPlayers.filter {
+        player != _._1
       }
 
     case e@Virtual(Destroy(entity)) =>
-      println(e)
-      virtualPlayers = virtualPlayers.filterKeys {
-        entity != _
+      virtualPlayers = virtualPlayers.filter {
+        entity != _._1
       }
 
-      virtualEnergies = virtualEnergies.filterKeys {
-        entity != _
+      virtualEnergies = virtualEnergies.filter {
+        entity != _._1
       }
   }
 
@@ -197,6 +193,9 @@ class Region(worldSquare: RegionBoundaries, regionSquare: RegionBoundaries, fron
         } else {
           // Leave the frontier - Leave the region
           context.stop(player)
+          players = players.filter {
+            player != _._1
+          }
           bridge ! Virtual(CreatePlayer(state))
           (false, false)
         }
@@ -204,6 +203,9 @@ class Region(worldSquare: RegionBoundaries, regionSquare: RegionBoundaries, fron
         // Small frontier isn't it?
         if (!isInRegion(state.position, state.weight)) {
           context.stop(player)
+          players = players.filter {
+            player != _._1
+          }
           bridge ! Virtual(CreatePlayer(state))
           (false, false)
         } else {

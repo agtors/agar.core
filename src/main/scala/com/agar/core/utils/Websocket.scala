@@ -21,6 +21,8 @@ object WebSocket {
   }
 
   def sendText(text: String): Unit = {
-    for (connection <- browserConnections) connection(TextMessage.Strict(text))
+    for (connection <- browserConnections) {
+      connection(TextMessage.Strict(text))
+    }
   }
 }

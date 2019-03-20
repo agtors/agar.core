@@ -28,7 +28,7 @@ object Journal {
 // The journal is used by the client to update his state
 // This is sink with though a websocket connection
 // TODO: Store the logs/event in a database with JDBC connector
-class Journal extends Actor with ActorLogging {
+class Journal(external: String) extends Actor with ActorLogging {
 
   implicit val materializer: ActorMaterializer = ActorMaterializer()
 
@@ -37,7 +37,7 @@ class Journal extends Actor with ActorLogging {
   }
 
   def this(host: String, port: Int)(system: ActorSystem) {
-    this()
+    this(host + ":" + port)
     Http()(system).bindAndHandle(route, host, port).onComplete {
       case Success(binding) => log.info(s"Listening on ${binding.localAddress.getHostString}:${binding.localAddress.getPort}.")
       case Failure(exception) => throw exception
@@ -52,6 +52,7 @@ class Journal extends Actor with ActorLogging {
       val energiesInfos = energies.map { case (ref, state) => EnergyInfos(state.position, state.value, ref) }.toList
 
       // TODO: We can switch to BinaryMessage to increase the speed
+      println("Send to " + external + " " + playersInfos.size + " players, " + energiesInfos.size + " energies")
       WebSocket.sendText(Json.arr(playersInfos.asJson, energiesInfos.asJson).noSpaces)
   }
 }

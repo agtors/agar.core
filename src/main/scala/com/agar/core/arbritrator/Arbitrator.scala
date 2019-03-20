@@ -70,8 +70,6 @@ class Arbitrator(region: ActorRef)(implicit agarSystem: AgarSystem) extends Acto
   def waitingForAOISet: Receive = {
     case AOISet(players) =>
 
-      // logging.Logger.getAnonymousLogger.info(s"Starting a new game turn with ${players.size} players")
-
       val waitingPlayers = players.map { case (player, area) =>
         player ! Tick(area)
         player -> Running
