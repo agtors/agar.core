@@ -52,7 +52,7 @@ class Journal(external: String) extends Actor with ActorLogging {
       val energiesInfos = energies.map { case (ref, state) => EnergyInfos(state.position, state.value, ref) }.toList
 
       // TODO: We can switch to BinaryMessage to increase the speed
-      println("Send to " + external + " " + playersInfos.size + " players, " + energiesInfos.size + " energies")
+      // println("Send to " + external + " " + playersInfos.size + " players, " + energiesInfos.size + " energies")
       WebSocket.sendText(Json.arr(playersInfos.asJson, energiesInfos.asJson).noSpaces)
   }
 }

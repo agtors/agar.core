@@ -100,8 +100,8 @@ class Player(worldSquare: RegionBoundaries, var position: Vector2d, var weight: 
   private def chaseThem(aoi: AOI): Option[Either[PlayerInfos, EnergyInfos]] = {
     getNearestWeakPlayerAround(aoi.players) match {
       case None =>
-        this.activeState.drop(1) // the weak player escaped
-        this.activeState = Wander :: this.activeState
+        // the weak player escaped
+        this.activeState = Wander :: this.activeState.drop(1)
         None
       case Some(weakPlayer) => Some(Left(weakPlayer)) // continue the hunt
     }
@@ -110,8 +110,8 @@ class Player(worldSquare: RegionBoundaries, var position: Vector2d, var weight: 
   private def runForYourLife(aoi: AOI): Option[Either[PlayerInfos, EnergyInfos]] = {
     getPositionOfTheNearestDangerousPlayerInThreatRadius(aoi.players) match {
       case None =>
-        this.activeState.drop(1) // the dangerous player is distant
-        this.activeState = Wander :: this.activeState
+        // the dangerous player is distant
+        this.activeState = Wander :: this.activeState.drop(1)
         None
       case Some(dangerousPlayer) => Some(Left(dangerousPlayer)) // continue to run away
     }
@@ -134,8 +134,8 @@ class Player(worldSquare: RegionBoundaries, var position: Vector2d, var weight: 
 
     getPositionOfTheNearestEnergy(aoi.energies) match {
       case None =>
-        this.activeState.drop(1)
-        this.activeState = Wander :: this.activeState
+        this.activeState = Wander :: this.activeState.drop(1)
+
         None
       case Some(energy) => Some(Right(energy)) // move toward this energy
     }
@@ -157,11 +157,12 @@ class Player(worldSquare: RegionBoundaries, var position: Vector2d, var weight: 
     }
 
     getPositionOfTheNearestEnergy(aoi.energies) match {
+      case Some(energy) =>
+        this.activeState = CollectEnergy :: this.activeState.drop(1)
+        Some(Right(energy)) // move toward this energy
       case None =>
-        this.activeState.drop(1)
-        this.activeState = CollectEnergy :: this.activeState
+        this.activeState = Wander :: this.activeState.drop(1)
         None
-      case Some(energy) => Some(Right(energy)) // move torward this energy
     }
   }
 
@@ -197,8 +198,8 @@ class Player(worldSquare: RegionBoundaries, var position: Vector2d, var weight: 
       .sortBy(p => p.position.euclideanDistance(position))
       .headOption
 
-  // The cell need to be 1/3 bigger than the other
-  private def canEat(weight1: Int, weight2: Int): Boolean = weight1 * 0.75 >= weight2
+  // The cell need to be 1/3 bigger than the other | TODO(didier)
+  private def canEat(weight1: Int, weight2: Int): Boolean = weight1 > weight2
 
   private def getPositionOfTheNearestEnergy(energies: List[EnergyInfos]): Option[EnergyInfos] =
     energies

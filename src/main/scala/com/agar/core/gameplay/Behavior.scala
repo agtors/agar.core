@@ -2,6 +2,8 @@ package com.agar.core.gameplay
 
 import com.agar.core.utils.Vector2d
 
+import scala.util.Random
+
 object Behavior {
   type Steering = Vector2d
 
@@ -41,7 +43,7 @@ object Behavior {
     circleCenter = circleCenter.normalize()
     circleCenter = circleCenter * wanderDistance
 
-    var displacement = Vector2d(0, -1)
+    var displacement = Vector2d(Random.nextDouble() / Double.MaxValue, Random.nextDouble() / Double.MaxValue)
     displacement = displacement * wanderRadius
 
     // wander force
